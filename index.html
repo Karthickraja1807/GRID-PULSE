@@ -1,0 +1,749 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GridPulse - IoT Smart Energy Meter Dashboard</title>
+    <!-- Custom Pure CSS Stylesheet -->
+    <link rel="stylesheet" href="./style.css" id="custom-stylesheet" />
+    <!-- Lucide Icons Library CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js Library CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <!-- Login Screen Container -->
+    <div class="login-container" id="login-screen">
+      <div class="login-card" style="max-height: 95vh; overflow-y: auto;">
+        <div class="login-header">
+          <div class="login-brand-icon">
+            <i data-lucide="zap"></i>
+          </div>
+          <h2>GridPulse Portal</h2>
+          <p>IoT Smart Energy Meter Management Console</p>
+        </div>
+
+        <!-- Connection Option Tabs -->
+        <div class="login-tabs">
+          <button type="button" class="login-tab-btn active" id="tab-simulation">
+            <i data-lucide="sliders"></i> Simulation Mode
+          </button>
+          <button type="button" class="login-tab-btn" id="tab-iot">
+            <i data-lucide="wifi"></i> Thinger.io IoT Mode
+          </button>
+        </div>
+        
+        <!-- Standard Username/Password Credentials Form -->
+        <form id="local-login-form" class="login-form active">
+          <div class="form-info-alert">
+            <i data-lucide="info" style="color: var(--primary); width: 16px; height: 16px; flex-shrink: 0;"></i>
+            <span>Authenticate using your engineer credentials to access the live simulation dashboard and diagnostic monitoring suite.</span>
+          </div>
+          
+          <div class="form-group">
+            <label for="login-username">Engineer Username <span class="required" style="color: var(--danger);">*</span></label>
+            <div class="input-icon-wrapper">
+              <i data-lucide="user" class="input-icon"></i>
+              <input type="text" id="login-username" class="form-control" placeholder="e.g., admin" required />
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="login-password">System Passcode <span class="required" style="color: var(--danger);">*</span></label>
+            <div class="input-icon-wrapper">
+              <i data-lucide="lock" class="input-icon"></i>
+              <input type="password" id="login-password" class="form-control" placeholder="Passcode (Default: admin123)" required />
+            </div>
+          </div>
+          
+          <button type="submit" class="btn btn-primary btn-block" style="width: 100%; margin-top: 1rem; background-color: var(--primary);">
+            <i data-lucide="play"></i> Access Dev Simulation Mode
+          </button>
+          
+          <div class="credentials-hint" style="margin-top: 1rem; font-size: 0.8rem; color: var(--text-secondary); text-align: center;">
+            <strong>Passcode Hint:</strong> Use Username: <code class="mono" style="background: var(--bg-accent); padding: 2px 4px; border-radius: 4px; color: var(--warning);">admin</code> & Passcode: <code class="mono" style="background: var(--bg-accent); padding: 2px 4px; border-radius: 4px; color: var(--warning);">admin123</code>
+          </div>
+        </form>
+
+        <!-- Thinger.io IoT Credentials Form -->
+        <form id="thinger-login-form" class="login-form">
+          <div class="form-info-alert" style="background-color: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.15); color: var(--text-secondary);">
+            <i data-lucide="wifi" style="color: var(--success); width: 16px; height: 16px; flex-shrink: 0;"></i>
+            <span>Connect directly to your ESP32 + PZEM-004T hardware nodes by entering your Thinger.io account parameters below.</span>
+          </div>
+
+          <div class="form-group">
+            <label for="login-thinger-username">Thinger.io Username <span class="required" style="color: var(--danger);">*</span></label>
+            <div class="input-icon-wrapper">
+              <i data-lucide="user" class="input-icon"></i>
+              <input type="text" id="login-thinger-username" class="form-control" placeholder="Thinger.io account username" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="login-thinger-device-id">Device ID <span class="required" style="color: var(--danger);">*</span></label>
+            <div class="input-icon-wrapper">
+              <i data-lucide="cpu" class="input-icon"></i>
+              <input type="text" id="login-thinger-device-id" class="form-control" placeholder="e.g., esp32_pzem" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="login-thinger-resource">Resource Name <span class="required" style="color: var(--danger);">*</span></label>
+            <div class="input-icon-wrapper">
+              <i data-lucide="database" class="input-icon"></i>
+              <input type="text" id="login-thinger-resource" class="form-control" placeholder="e.g., pzem" value="pzem" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="login-thinger-token">Device Access Token <span class="required" style="color: var(--danger);">*</span></label>
+            <div class="input-icon-wrapper">
+              <i data-lucide="key" class="input-icon"></i>
+              <input type="password" id="login-thinger-token" class="form-control" placeholder="Paste your bearer token here" required />
+            </div>
+          </div>
+
+          <!-- Demo Mode Fallback Checkbox -->
+          <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin: 1rem 0;">
+            <input type="checkbox" id="login-thinger-demo" style="width: 16px; height: 16px; cursor: pointer;" checked />
+            <label for="login-thinger-demo" style="margin-bottom: 0; cursor: pointer; font-size: 0.82rem; color: var(--text-secondary);">
+              Enable Demo Mode fallback if device is offline
+            </label>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block" style="width: 100%; margin-top: 1rem; background-color: var(--success); border-color: var(--success);">
+            <i data-lucide="plug"></i> Connect & Stream Live Readings
+          </button>
+        </form>
+        
+        <div class="login-footer">
+          <p>GridPulse IoT Smart Energy Management Platform &copy; 2026</p>
+          <p style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.25rem;">Designed for Final Year Presentation — Dept. of ECE</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="dashboard-container" id="main-dashboard" style="display: none;">
+      
+      <!-- Top Header / Navigation Bar -->
+      <header class="header" id="dashboard-header">
+        <div class="brand" id="brand-info">
+          <div class="brand-icon" id="brand-logo">
+            <i data-lucide="zap"></i>
+          </div>
+          <div>
+            <h1>GridPulse</h1>
+            <p>Smart Energy Meter Simulation & Analytics Console</p>
+          </div>
+        </div>
+        
+        <!-- Live System Status Widget -->
+        <div class="system-status" id="system-status-widget">
+          <!-- User profile badge showing active login session -->
+          <div class="user-profile-badge" id="user-profile-badge" style="display: flex; align-items: center; gap: 0.5rem; background: var(--bg-accent); padding: 0.35rem 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.85rem; color: var(--text-primary);">
+            <i data-lucide="user" style="width: 14px; height: 14px; color: var(--primary);"></i>
+            <span id="logged-in-user-name" style="font-weight: 500;">Guest</span>
+            <button id="logout-btn" style="background: none; border: none; color: var(--danger); margin-left: 0.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0.15rem; transition: var(--transition);" title="Logout Session">
+              <i data-lucide="log-out" style="width: 14px; height: 14px;"></i>
+            </button>
+          </div>
+          
+          <div class="status-indicator status-online" id="connection-status">
+            <span class="pulse-dot" id="status-dot"></span>
+            <span id="status-text">Device Online</span>
+          </div>
+          
+          <button class="settings-btn" id="toggle-settings-btn">
+            <i data-lucide="settings"></i> Settings
+          </button>
+        </div>
+      </header>
+
+      <!-- Settings Drawer Panel (Collapsible) -->
+      <section class="settings-drawer" id="settings-drawer-panel" style="max-height: 85vh; overflow-y: auto;">
+        <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+          <i data-lucide="sliders"></i> Threshold & Alert Settings
+        </h3>
+        
+        <div class="settings-grid" id="settings-fields" style="margin-bottom: 1.5rem;">
+          <!-- Overvoltage limit -->
+          <div class="form-group">
+            <label for="over-voltage-threshold">Over-Voltage Alert (V)</label>
+            <input type="number" id="over-voltage-threshold" class="form-control" placeholder="e.g., 245" value="245" min="220" max="280" />
+          </div>
+          
+          <!-- Undervoltage limit -->
+          <div class="form-group">
+            <label for="under-voltage-threshold">Under-Voltage Alert (V)</label>
+            <input type="number" id="under-voltage-threshold" class="form-control" placeholder="e.g., 205" value="205" min="180" max="240" />
+          </div>
+          
+          <!-- Overload wattage limit -->
+          <div class="form-group">
+            <label for="overload-threshold">Overload Threshold (Watts)</label>
+            <input type="number" id="overload-threshold" class="form-control" placeholder="e.g., 3000" value="3000" min="500" max="10000" />
+          </div>
+          
+          <!-- Monthly target limit -->
+          <div class="form-group">
+            <label for="budget-target-threshold">Target Energy Limit (kWh)</label>
+            <input type="number" id="budget-target-threshold" class="form-control" placeholder="e.g., 50" value="50" min="5" max="1000" />
+          </div>
+
+          <!-- Base tariff limit -->
+          <div class="form-group">
+            <label for="tariff-rate-threshold">Base Tariff (₹/kWh)</label>
+            <input type="number" id="tariff-rate-threshold" class="form-control" placeholder="e.g., 7.50" value="7.50" step="0.10" min="0" />
+          </div>
+        </div>
+
+        <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-top: 1.5rem;">
+          <i data-lucide="cpu"></i> Thinger.io IoT Server Credentials
+        </h3>
+
+        <div class="settings-grid" id="thinger-settings-fields" style="margin-bottom: 1rem;">
+          <!-- Thinger Username -->
+          <div class="form-group">
+            <label for="thinger-username">Thinger.io Username</label>
+            <input type="text" id="thinger-username" class="form-control" placeholder="Your Thinger.io Username" value="" />
+          </div>
+
+          <!-- Thinger Device ID -->
+          <div class="form-group">
+            <label for="thinger-device-id">Device ID</label>
+            <input type="text" id="thinger-device-id" class="form-control" placeholder="e.g., esp32_pzem" value="" />
+          </div>
+
+          <!-- Thinger Resource Name -->
+          <div class="form-group">
+            <label for="thinger-resource">Resource Name</label>
+            <input type="text" id="thinger-resource" class="form-control" placeholder="e.g., pzem" value="pzem" />
+          </div>
+
+          <!-- Thinger Access Token -->
+          <div class="form-group" style="grid-column: span 2;">
+            <label for="thinger-token">Device Access Token (Bearer Token)</label>
+            <input type="password" id="thinger-token" class="form-control" placeholder="Enter Thinger.io access token or bearer token" value="" />
+          </div>
+
+          <!-- Demo Mode Fallback Checkbox -->
+          <div class="form-group" style="grid-column: span 2; display: flex; align-items: center; gap: 0.75rem; margin-top: 0.5rem;">
+            <input type="checkbox" id="thinger-demo-mode" style="width: 18px; height: 18px; cursor: pointer;" />
+            <label for="thinger-demo-mode" style="margin-bottom: 0; cursor: pointer; font-weight: 500;">
+              Enable Demo Mode (Generate simulated data if Thinger.io is offline)
+            </label>
+          </div>
+        </div>
+        
+        <div class="settings-actions" id="settings-drawer-actions">
+          <button class="btn btn-secondary" id="reset-settings-btn">
+            <i data-lucide="rotate-ccw"></i> Reset Defaults
+          </button>
+          <button class="btn btn-primary" id="save-settings-btn">
+            <i data-lucide="save"></i> Update Thresholds
+          </button>
+        </div>
+      </section>
+
+      <!-- Main Dashboard Grid -->
+      <main class="dashboard-grid" id="dashboard-main-grid">
+        
+        <!-- LEFT COLUMN: Live Meters, Alert Trigger Controls & Charts -->
+        <div class="live-readings-column" id="left-layout-column">
+          
+          <!-- Live Metrics Grid -->
+          <section class="metrics-grid" id="metrics-deck">
+            
+            <!-- Voltage Card -->
+            <div class="card voltage-card" id="card-voltage">
+              <div class="card-header-simple">
+                <span class="card-title-simple">Voltage</span>
+                <div class="card-icon-container"><i data-lucide="activity"></i></div>
+              </div>
+              <div class="card-value mono" id="voltage-val">0.0 V</div>
+              <div class="card-subtext" id="voltage-status">
+                <i data-lucide="check-circle" class="email-sent-icon"></i> Stable
+              </div>
+            </div>
+            
+            <!-- Current Card -->
+            <div class="card current-card" id="card-current">
+              <div class="card-header-simple">
+                <span class="card-title-simple">Current</span>
+                <div class="card-icon-container"><i data-lucide="zap"></i></div>
+              </div>
+              <div class="card-value mono" id="current-val">0.00 A</div>
+              <div class="card-subtext" id="current-peak">
+                Peak: 0.00 A
+              </div>
+              <div class="gauge-bar-wrapper">
+                <div class="gauge-bar" id="current-gauge"></div>
+              </div>
+            </div>
+            
+            <!-- Active Power Card -->
+            <div class="card power-card" id="card-power">
+              <div class="card-header-simple">
+                <span class="card-title-simple">Active Power</span>
+                <div class="card-icon-container"><i data-lucide="bolt"></i></div>
+              </div>
+              <div class="card-value mono" id="power-val">0.0 W</div>
+              <div class="card-subtext" id="power-load">
+                Load: Standby / Idle
+              </div>
+            </div>
+            
+            <!-- Energy Card -->
+            <div class="card energy-card" id="card-energy">
+              <div class="card-header-simple">
+                <span class="card-title-simple">Total Energy</span>
+                <button id="reset-energy-btn" class="card-icon-container reset-btn-clickable" title="Reset Energy to 0 (Click to reset)">
+                  <i data-lucide="battery-charging" class="energy-icon-default"></i>
+                  <i data-lucide="rotate-ccw" class="energy-icon-hover" style="display: none;"></i>
+                </button>
+              </div>
+              <div class="card-value mono" id="energy-val">0.00 kWh</div>
+              <div class="card-subtext" id="carbon-footprint">
+                CO₂: 0.00 kg
+              </div>
+              <div class="card-subtext" id="energy-cost-text">
+                <i data-lucide="credit-card" style="width: 14px; height: 14px; flex-shrink: 0;"></i>
+                <span>Cost:</span>
+                <strong id="energy-cost-val">₹0.00</strong>
+              </div>
+            </div>
+            
+            <!-- Frequency Card -->
+            <div class="card frequency-card" id="card-frequency">
+              <div class="card-header-simple">
+                <span class="card-title-simple">Grid Frequency</span>
+                <div class="card-icon-container"><i data-lucide="activity"></i></div>
+              </div>
+              <div class="card-value mono" id="frequency-val">0.0 Hz</div>
+              <div class="card-subtext" id="frequency-stability">
+                Sync Status: Offline
+              </div>
+            </div>
+            
+            <!-- Power Factor Card -->
+            <div class="card pf-card" id="card-pf">
+              <div class="card-header-simple">
+                <span class="card-title-simple">Power Factor</span>
+                <div class="card-icon-container"><i data-lucide="percent"></i></div>
+              </div>
+              <div class="card-value mono" id="pf-val">0.00</div>
+              <div class="card-subtext" id="pf-phase">
+                Load Phase: Resistive
+              </div>
+            </div>
+            
+          </section>
+
+          <!-- Historical Trends Card -->
+          <section class="card charts-card" id="card-historical-charts">
+            <div class="charts-header" id="charts-header-bar">
+              <h3 style="display: flex; align-items: center; gap: 0.5rem;">
+                <i data-lucide="line-chart"></i> Real-time System Trends
+              </h3>
+              <div class="charts-tabs" id="charts-tabs-selection">
+                <button class="tab-btn active" data-chart-tab="voltage">Voltage (V)</button>
+                <button class="tab-btn" data-chart-tab="current">Current (A)</button>
+                <button class="tab-btn" data-chart-tab="power">Power (W)</button>
+                <button class="tab-btn" data-chart-tab="energy">Energy (kWh)</button>
+              </div>
+            </div>
+            <div class="chart-wrapper" id="canvas-container">
+              <canvas id="historicalTrendsChart"></canvas>
+            </div>
+          </section>
+
+          <!-- Control Configuration & Alarms Log -->
+          <section class="card alerts-card" id="card-alerts-panel">
+            <div class="alerts-header" id="alerts-header-row">
+              <h3 style="display: flex; align-items: center; gap: 0.5rem;">
+                <i data-lucide="bell"></i> Smart Alarm Limits & Logs
+              </h3>
+            </div>
+            
+            <!-- Triggers Set Parameters -->
+            <div class="alerts-threshold-triggers" id="threshold-form">
+              <div class="threshold-group">
+                <label for="threshold-overvoltage">Over-Voltage Limit</label>
+                <div class="threshold-input-wrapper">
+                  <input type="number" id="threshold-overvoltage" value="245" min="230" max="270" />
+                  <span class="threshold-unit">V</span>
+                </div>
+              </div>
+              
+              <div class="threshold-group">
+                <label for="threshold-undervoltage">Under-Voltage Limit</label>
+                <div class="threshold-input-wrapper">
+                  <input type="number" id="threshold-undervoltage" value="205" min="180" max="230" />
+                  <span class="threshold-unit">V</span>
+                </div>
+              </div>
+              
+              <div class="threshold-group">
+                <label for="threshold-maxpower">Over-Power Threshold</label>
+                <div class="threshold-input-wrapper">
+                  <input type="number" id="threshold-maxpower" value="3000" min="500" max="10000" />
+                  <span class="threshold-unit">W</span>
+                </div>
+              </div>
+              
+              <div class="threshold-group">
+                <label for="threshold-maxenergy">Daily Energy Target</label>
+                <div class="threshold-input-wrapper">
+                  <input type="number" id="threshold-maxenergy" value="50" min="1" max="500" />
+                  <span class="threshold-unit">kWh</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Alerts Log Table -->
+            <div class="alerts-log-wrapper" id="alerts-log-container">
+              <table class="alerts-table" id="alerts-table-log">
+                <thead>
+                  <tr>
+                    <th>Timestamp</th>
+                    <th>Alert Description</th>
+                    <th>Measured Value</th>
+                    <th>Severity</th>
+                  </tr>
+                </thead>
+                <tbody id="alerts-log-body">
+                  <!-- Injected via JavaScript dynamically -->
+                </tbody>
+              </table>
+              <div class="alerts-empty-state" id="alerts-empty-placeholder">
+                <i data-lucide="check" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
+                <p>No alerts triggered. System operating within safe limits.</p>
+              </div>
+            </div>
+          </section>
+
+        </div>
+
+        <!-- RIGHT COLUMN: Health Score, Predictive Bill, Smart Recommendations -->
+        <div class="analytics-column" id="right-layout-column">
+          
+          <!-- Energy Health Score Card -->
+          <section class="card" id="card-health-score">
+            <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+              <i data-lucide="shield-check"></i> Grid Health Index
+            </h3>
+            
+            <div class="health-score-container" id="health-gauge-container">
+              <!-- SVG Arc Progress Circle -->
+              <div class="radial-progress-wrapper" id="health-radial-wrapper">
+                <svg class="radial-progress-svg" viewBox="0 0 140 140">
+                  <circle class="radial-progress-bg" cx="70" cy="70" r="58"></circle>
+                  <circle class="radial-progress-fill" id="health-progress-ring" cx="70" cy="70" r="58"></circle>
+                </svg>
+                <div class="radial-progress-text" id="health-score-text-box">
+                  <span class="radial-progress-val" id="health-score-value">0</span>
+                  <span class="radial-progress-pct">/100</span>
+                </div>
+              </div>
+              
+              <div class="health-status-badge health-poor" id="health-score-badge">Offline</div>
+              
+              <!-- Metrics Breakdown -->
+              <div class="health-breakdown" id="health-breakdown-details">
+                <div class="health-breakdown-title">Diagnostic Metrics</div>
+                
+                <div class="health-breakdown-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0;">
+                  <span style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; color: var(--text-secondary);">
+                    <i data-lucide="activity" style="width: 14px; height: 14px; color: #3b82f6; flex-shrink: 0;"></i> Voltage Stability
+                  </span>
+                  <strong id="health-breakdown-voltage" style="font-size: 0.85rem;">N/A</strong>
+                </div>
+                
+                <div class="health-breakdown-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0;">
+                  <span style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; color: var(--text-secondary);">
+                    <i data-lucide="percent" style="width: 14px; height: 14px; color: #22d3ee; flex-shrink: 0;"></i> Power Factor Quality
+                  </span>
+                  <strong id="health-breakdown-pf" style="font-size: 0.85rem;">N/A</strong>
+                </div>
+                
+                <div class="health-breakdown-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0;">
+                  <span style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; color: var(--text-secondary);">
+                    <i data-lucide="bolt" style="width: 14px; height: 14px; color: #ef4444; flex-shrink: 0;"></i> Load Balancing
+                  </span>
+                  <strong id="health-breakdown-load" style="font-size: 0.85rem;">N/A</strong>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Predictive Bill Card -->
+          <section class="card" id="card-bill-prediction">
+            <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+              <i data-lucide="calculator"></i> Electricity Bill Predictor
+            </h3>
+            
+            <div class="predictive-bill-body" id="billing-prediction-body">
+              <div class="tariff-input-row" id="tariff-row">
+                <span class="tariff-label">Energy Tariff / Unit:</span>
+                <div class="tariff-input-wrapper">
+                  <span class="currency-symbol">₹</span>
+                  <input type="number" id="tariff-input" class="tariff-input" value="7.50" step="0.10" min="0" />
+                </div>
+              </div>
+
+              <div class="bill-calculations" id="billing-calculated-numbers">
+                <div class="bill-calc-box" id="calc-box-current">
+                  <div class="calc-label">Accrued Cost</div>
+                  <div class="calc-val mono" id="current-cost-val">₹0.00</div>
+                </div>
+                
+                <div class="bill-calc-box" id="calc-box-predicted">
+                  <div class="calc-label">Est. Month Bill</div>
+                  <div class="calc-val mono" id="predicted-bill-val">₹0.00</div>
+                </div>
+              </div>
+
+              <!-- Budget Progression Bar -->
+              <div class="budget-alert-bar" id="budget-progress-bar-section">
+                <div class="budget-progress-info">
+                  <span>Monthly Energy Target:</span>
+                  <strong id="budget-target-label">0 / 50 kWh</strong>
+                </div>
+                <div class="budget-progress-container">
+                  <div class="budget-progress-fill" id="budget-progress-indicator"></div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Smart Recommendations Panel -->
+          <section class="card recommendations-card" id="card-recommendations">
+            <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+              <i data-lucide="lightbulb"></i> AI recommendations
+            </h3>
+            <div class="recommendations-list" id="recommendations-container">
+              <!-- recommendations items dynamically injected -->
+            </div>
+          </section>
+
+        </div>
+
+        <div style="display: none !important;" id="card-hardware-manual-removed">
+                
+                <table class="wiring-table" id="wiring-table-ref">
+                  <thead>
+                    <tr>
+                      <th>PZEM-004T Pins</th>
+                      <th>ESP32 GPIO Pins</th>
+                      <th>Connection Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>VCC</td>
+                      <td>5V / VIN</td>
+                      <td>Powers the PZEM optocoupler receiver board</td>
+                    </tr>
+                    <tr>
+                      <td>RX</td>
+                      <td>GPIO 17 (TX2)</td>
+                      <td>Connects to ESP32 Hardware Serial 2 TX</td>
+                    </tr>
+                    <tr>
+                      <td>TX</td>
+                      <td>GPIO 16 (RX2)</td>
+                      <td>Connects to ESP32 Hardware Serial 2 RX</td>
+                    </tr>
+                    <tr>
+                      <td>GND</td>
+                      <td>GND</td>
+                      <td>Common ground between logic circuits</td>
+                    </tr>
+                  </tbody>
+                </table>
+                
+                <h4 style="margin-top: 1.25rem; margin-bottom: 0.5rem; color: var(--warning);">⚡ AC Safety Precaution WARNING</h4>
+                <div style="background-color: var(--danger-glow); border-left: 4px solid var(--danger); padding: 0.85rem; border-radius: var(--radius-sm); font-size: 0.8rem; color: var(--text-primary);">
+                  <strong>DANGER - HIGH VOLTAGE:</strong> The PZEM-004T terminal block connects directly to 230V AC Mains. Do NOT touch any part of the PZEM board or wire nodes while connected. Keep logic cables separated and use isolated enclosures.
+                </div>
+              </div>
+
+              <!-- Arduino IDE C++ Sketch -->
+              <div class="hardware-code" id="hardware-code-ref">
+                <h4 style="margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; color: var(--success);">
+                  <span>Arduino ESP32 Sketch</span>
+                </h4>
+                <div class="code-container" id="esp32-code-box">
+                  <button class="code-copy-btn" id="copy-code-btn">Copy Code</button>
+                  <pre><code class="language-cpp" id="cpp-code-block">/*
+ * GridPulse PZEM-004T v3.0 & ESP32
+ * Upload this sketch using the Arduino IDE
+ * Libraries Required: Thinger.io, PZEM004Tv30, ESP_Mail_Client (for direct emails)
+ */
+
+#define THINGER_SERIAL_DEBUG
+#include &lt;WiFi.h&gt;
+#include &lt;ThingerESP32.h&gt;
+#include &lt;PZEM004Tv30.h&gt;
+#include &lt;ESP_Mail_Client.h&gt; // For sending emails directly from ESP32
+
+// Thinger.io Connection Settings
+#define USERNAME "YOUR_THINGER_USERNAME"
+#define DEVICE_ID "YOUR_DEVICE_ID"
+#define DEVICE_CREDENTIAL "YOUR_DEVICE_CREDENTIAL"
+
+// WiFi Credentials
+#define SSID "YOUR_WIFI_SSID"
+#define SSID_PASSWORD "YOUR_WIFI_PASSWORD"
+
+// SMTP Configuration (e.g., Gmail SMTP)
+#define SMTP_HOST "smtp.gmail.com"
+#define SMTP_PORT 465
+#define SENDER_EMAIL "your_alert_sender@gmail.com"
+#define SENDER_PASSWORD "your_gmail_app_password" // Use Gmail App Password
+#define RECIPIENT_EMAIL "engineer_alert_receiver@gmail.com"
+
+// Hardware Serial 2 Pins for PZEM
+#define RXD2 16
+#define TXD2 17
+
+// Thresholds for ESP32 safety monitoring
+const float OVER_VOLTAGE_LIMIT = 245.0; // Volts
+const float MAX_POWER_LIMIT     = 3000.0; // Watts
+const float MAX_ENERGY_LIMIT    = 50.0;   // kWh
+
+ThingerESP32 thing(USERNAME, DEVICE_ID, DEVICE_CREDENTIAL);
+PZEM004Tv30 pzem(Serial2, RXD2, TXD2);
+SMTPSession smtp;
+
+// State flags to prevent spamming multiple emails for the same continuous event
+bool overVoltageAlertSent = false;
+bool overloadAlertSent = false;
+bool overEnergyAlertSent = false;
+
+// Function declarations
+void sendDirectEmailAlert(String subject, String messageText);
+
+void setup() {
+  Serial.begin(115200);
+  
+  // Set up Thinger WiFi
+  thing.add_wifi(SSID, SSID_PASSWORD);
+  
+  // Define Thinger Resource: "pzem"
+  thing["pzem"] &gt;&gt; [](pson&amp; out){
+    float voltage = pzem.voltage();
+    float current = pzem.current();
+    float power = pzem.power();
+    float energy = pzem.energy();
+    float frequency = pzem.frequency();
+    float pf = pzem.pf();
+    
+    // Safety check - If sensor reading fails, assign 0
+    out["voltage"] = (!isnan(voltage)) ? voltage : 0.0;
+    out["current"] = (!isnan(current)) ? current : 0.0;
+    out["power"] = (!isnan(power)) ? power : 0.0;
+    out["energy"] = (!isnan(energy)) ? energy : 0.0;
+    out["frequency"] = (!isnan(frequency)) ? frequency : 0.0;
+    out["pf"] = (!isnan(pf)) ? pf : 0.0;
+    out["online"] = true; // Heartbeat status
+    
+    // ----------------------------------------------------
+    // LIVE ESP32 SAFETY LIMITS & DIRECT SMTP EMAIL LOGIC
+    // ----------------------------------------------------
+    if (!isnan(voltage)) {
+      // 1. Over-Voltage Monitor
+      if (voltage &gt; OVER_VOLTAGE_LIMIT) {
+        if (!overVoltageAlertSent) {
+          sendDirectEmailAlert("⚠️ [ESP32 Alert] Over-Voltage Detected!", 
+                               "Critical Voltage Threshold Exceeded!\nMeasured: " + String(voltage, 1) + " V\nThreshold: " + String(OVER_VOLTAGE_LIMIT, 1) + " V");
+          overVoltageAlertSent = true;
+        }
+      } else if (voltage &lt; (OVER_VOLTAGE_LIMIT - 5.0)) {
+        overVoltageAlertSent = false; // Reset alert flag when voltage returns to safe range
+      }
+      
+      // 2. Over-Load Power Monitor
+      if (power &gt; MAX_POWER_LIMIT) {
+        if (!overloadAlertSent) {
+          sendDirectEmailAlert("🚨 [ESP32 Alert] System Overload!", 
+                               "Total Wattage Draw Exceeds Capacity!\nMeasured: " + String(power, 1) + " W\nThreshold: " + String(MAX_POWER_LIMIT, 1) + " W");
+          overloadAlertSent = true;
+        }
+      } else if (power &lt; (MAX_POWER_LIMIT - 100.0)) {
+        overloadAlertSent = false;
+      }
+      
+      // 3. Monthly Budget/Energy Cap Monitor
+      if (energy &gt; MAX_ENERGY_LIMIT) {
+        if (!overEnergyAlertSent) {
+          sendDirectEmailAlert("📈 [ESP32 Alert] Energy Consumption Target Crossed!", 
+                               "The set monthly energy ceiling has been crossed.\nMeasured: " + String(energy, 2) + " kWh\nBudget: " + String(MAX_ENERGY_LIMIT, 1) + " kWh");
+          overEnergyAlertSent = true;
+        }
+      }
+    }
+  };
+}
+
+void loop() {
+  thing.handle();
+}
+
+/**
+ * Direct SMTP Email Dispatcher Function (Uses ESP_Mail_Client)
+ */
+void sendDirectEmailAlert(String subject, String messageText) {
+  Serial.println("Initiating direct SMTP email dispatch from ESP32...");
+  
+  Session_Config config;
+  config.server.host_name = SMTP_HOST;
+  config.server.port = SMTP_PORT;
+  config.login.email = SENDER_EMAIL;
+  config.login.password = SENDER_PASSWORD;
+  config.login.user_domain = "";
+
+  SMTP_Message message;
+  message.sender.name = "ESP32 Energy Monitor";
+  message.sender.email = SENDER_EMAIL;
+  message.subject = subject;
+  message.addRecipient("Receiver", RECIPIENT_EMAIL);
+  
+  // Set text message body
+  message.text.content = messageText.c_str();
+  message.text.charSet = "us-ascii";
+  message.text.transfer_encoding = Content_Transfer_Encoding::enc_7bit;
+  
+  if (!smtp.connect(&amp;config)) {
+    Serial.printf("SMTP Connection error, Status Code: %d, Reason: %s\n", smtp.statusCode(), smtp.errorReason().c_str());
+    return;
+  }
+
+  if (!MailClient.sendMail(&amp;smtp, &amp;message)) {
+    Serial.printf("Error sending Email, Reason: %s\n", smtp.errorReason().c_str());
+  } else {
+    Serial.println("Email alert sent successfully directly from ESP32!");
+  }
+}</code></pre>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+        </div>
+
+      </main>
+
+      <!-- Toast Notification Alert Overlay -->
+      <div class="toast-container" id="toast-notification-center">
+        <!-- Toast elements dynamically injected -->
+      </div>
+
+    </div>
+
+    <!-- Main Client Script Link -->
+    <script src="./script.js" type="module" id="custom-javascript"></script>
+  </body>
+</html>

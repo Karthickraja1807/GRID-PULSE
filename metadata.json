@@ -1,0 +1,6 @@
+{
+  "name": "Smart Energy Meter Dashboard",
+  "description": "A lightweight, real-time IoT energy monitoring dashboard using Thinger.io and Chart.js for ESP32 and PZEM-004T.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
