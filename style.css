@@ -594,7 +594,7 @@ input:checked + .slider:before {
   width: 100%;
   text-align: left;
   border-top: 1px solid var(--border-color);
-  padding-top: 1rem 0 0 0;
+  padding-top: 1rem;
   margin-top: 0.5rem;
 }
 
