@@ -381,6 +381,12 @@ input:checked + .slider:before {
   gap: 1.5rem;
 }
 
+.analytics-column > .card {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
 /* Subsection: Card Deck inside columns */
 .metrics-grid {
   display: grid;
@@ -422,27 +428,19 @@ input:checked + .slider:before {
 }
 
 .card-icon-container {
-  width: 40px;
-  height: 40px;
-  min-width: 40px;
-  min-height: 40px;
+  width: 32px;
+  height: 32px;
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
 }
 
 .card-icon-container i,
 .card-icon-container svg {
-  width: 20px;
-  height: 20px;
-  max-width: 100%;
-  max-height: 100%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 0;
+  width: 16px;
+  height: 16px;
+  display: inline-block;
 }
 
 .reset-btn-clickable {
@@ -517,9 +515,12 @@ input:checked + .slider:before {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   text-align: center;
-  padding: 1.5rem 0;
+  padding: 1rem 0 0 0;
+  flex: 1;
+  width: 100%;
+  gap: 1rem;
 }
 
 /* Circular Progress Bar */
@@ -618,7 +619,9 @@ input:checked + .slider:before {
 .predictive-bill-body {
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   gap: 1.25rem;
+  flex: 1;
 }
 
 .tariff-input-row {
@@ -911,6 +914,7 @@ input:checked + .slider:before {
   max-height: 400px;
   overflow-y: auto;
   padding-right: 0.25rem;
+  flex: 1;
 }
 
 .recommendation-item {

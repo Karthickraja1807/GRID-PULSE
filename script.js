@@ -138,7 +138,6 @@ const elements = {
   tariffInput: document.getElementById('tariff-input'),
   currentCostVal: document.getElementById('current-cost-val'),
   predictedBillVal: document.getElementById('predicted-bill-val'),
-  energyCostVal: document.getElementById('energy-cost-val'),
   budgetTargetLabel: document.getElementById('budget-target-label'),
   budgetProgressIndicator: document.getElementById('budget-progress-indicator'),
   
@@ -1047,12 +1046,7 @@ function updateHealthDisplay(score) {
 function updateBillCalculations() {
   const tariff = state.config.tariff;
   const accruedCost = state.metrics.energy * tariff;
-  if (elements.currentCostVal) {
-    elements.currentCostVal.innerText = `₹${accruedCost.toFixed(2)}`;
-  }
-  if (elements.energyCostVal) {
-    elements.energyCostVal.innerText = `₹${accruedCost.toFixed(2)}`;
-  }
+  elements.currentCostVal.innerText = `₹${accruedCost.toFixed(2)}`;
   
   // Estimate Month-end Bill (Extrapolating current load parameters safely)
   // Assume we have a simulated billing cycle of 30 days.
