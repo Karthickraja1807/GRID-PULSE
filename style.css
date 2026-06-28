@@ -595,7 +595,7 @@ input:checked + .slider:before {
   text-align: left;
   border-top: 1px solid var(--border-color);
   padding-top: 1rem;
-  margin-top: 0.5rem;
+  margin-top: 1.5rem;
 }
 
 .health-breakdown-title {
