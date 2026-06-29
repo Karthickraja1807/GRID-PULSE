@@ -41,24 +41,23 @@ def calculate_energy_plan(
     # Basic prioritization: higher priority gets more hours.
     norm_apps.sort(key=lambda x: x["priority"], reverse=True)
 
-    # Refine is more aggressive: cap total spend by an extra factor.
-    refine_factor = 1.0
-    if refine_level >= 1:
-        refine_factor = 0.85  # reduce allowed daily cost by 15%
-    if refine_level >= 2:
-        refine_factor = 0.80  # reduce allowed daily cost by 30%
+    # Daily cost cap (based only on budget)
+    allowed_daily_cost = daily_budget
 
-    allowed_daily_cost = daily_budget * refine_factor
+    # Keep variable for backward-compatible summary text (no effect on calculation)
+    refine_factor = 1.0
+
 
     # Allocate hours proportionally to priority weights while respecting budget.
     # Start with a small minimum and then distribute.
     weights = [max(a["priority"], 1) for a in norm_apps]
     weight_sum = float(sum(weights))
 
-    # Start with an initial guess: each appliance gets at most 24 hours/day.
-    # Then shrink to fit (we still enforce total <= 24 later).
+    # Start with an initial guess for hours/day.
+    # Removed the global 24h cap so higher budgets can increase total runtime.
     proposed_hours: List[float] = []
-    max_hours = 24.0
+    max_hours = 1000.0
+
 
     # Convert cost-per-hour for each appliance.
     cost_per_hour = [(_a["watts"] / 1000.0) * 8.0 for _a in norm_apps]  # INR per hour
@@ -75,11 +74,10 @@ def calculate_energy_plan(
 
     adjusted_hours = [max(0.0, h * scale) for h in proposed_hours]
 
-    # Enforce: total suggested runtime should not exceed 24 hours/day.
-    current_total_hours = sum(adjusted_hours)
-    if current_total_hours > 24.0 and current_total_hours > 0:
-        hours_scale = 24.0 / current_total_hours
-        adjusted_hours = [h * hours_scale for h in adjusted_hours]
+    # NOTE: Removed the total-hours cap (≤ 24) so higher budgets can increase runtime.
+
+
+
 
 
     # Optional: if still over (due to rounding later), reduce low-priority appliances.
@@ -107,31 +105,7 @@ def calculate_energy_plan(
     appliances_out: List[Dict[str, Any]] = []
     total_projected_cost = round(current_cost, 2)
 
-    # Ensure every appliance runs every day (non-zero hours) based on priority.
-    # Trigger the floor when any appliance is effectively zero/sleeping.
-    if any(h < 0.01 for h in adjusted_hours_int):
 
-        min_hours_share = 0.25  # hours/day minimum if budget allows
-        min_weights = [max(a["priority"], 1) for a in norm_apps]
-        mw_sum = float(sum(min_weights)) if min_weights else 1.0
-
-        hours_target = daily_budget * 0.9
-
-        # Proposed minimum allocation (sum may exceed target)
-        min_alloc = [min_hours_share * (w / mw_sum) * len(min_weights) for w in min_weights]
-        if sum(min_alloc) > 0 and sum(min_alloc) > hours_target:
-            scale_min = hours_target / sum(min_alloc)
-            min_alloc = [h * scale_min for h in min_alloc]
-
-        # Merge: keep original allocation if larger than minimum
-        merged = [max(float(orig), float(mi)) for orig, mi in zip(adjusted_hours_int, min_alloc)]
-
-        # Re-scale merged to exactly match hours_target
-        total_merged = sum(merged)
-        if total_merged > 0:
-            merged = [h * (hours_target / total_merged) for h in merged]
-
-        adjusted_hours_int = [round(h, 2) for h in merged]
 
     for a, hours in zip(norm_apps, adjusted_hours_int):
         energy_kwh = (a["watts"] / 1000.0) * float(hours)
