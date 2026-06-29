@@ -55,10 +55,10 @@ def calculate_energy_plan(
     weights = [max(a["priority"], 1) for a in norm_apps]
     weight_sum = float(sum(weights))
 
-    # Start with an initial guess: each appliance gets at most 12 hours/day.
-    # Then shrink to fit.
+    # Start with an initial guess: each appliance gets at most 24 hours/day.
+    # Then shrink to fit (we still enforce total <= 24 later).
     proposed_hours: List[float] = []
-    max_hours = 12.0
+    max_hours = 24.0
 
     # Convert cost-per-hour for each appliance.
     cost_per_hour = [(_a["watts"] / 1000.0) * 8.0 for _a in norm_apps]  # INR per hour
