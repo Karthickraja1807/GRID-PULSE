@@ -108,16 +108,20 @@ def calculate_energy_plan(
 
 
     for a, hours in zip(norm_apps, adjusted_hours_int):
+        # UI requirement: cap any displayed hours to 24 (don’t allow >24 to show up).
+        display_hours = float(min(float(hours), 24.0))
+
         energy_kwh = (a["watts"] / 1000.0) * float(hours)
         estimated_cost_per_day = round(energy_kwh * 8.0, 2)
         appliances_out.append(
             {
                 "name": a["name"],
                 "watts": a["watts"],
-                "suggested_daily_hours": float(hours),
+                "suggested_daily_hours": display_hours,
                 "estimated_cost_per_day": estimated_cost_per_day,
             }
         )
+
 
 
     # Summary + actionable trade-offs.
