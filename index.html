@@ -69,7 +69,7 @@
         <form id="thinger-login-form" class="login-form">
           <div class="form-info-alert" style="background-color: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.15); color: var(--text-secondary);">
             <i data-lucide="wifi" style="color: var(--success); width: 16px; height: 16px; flex-shrink: 0;"></i>
-            <span>Connect directly to your ESP32 + PZEM-004T hardware nodes by entering your Thinger.io account parameters below.</span>
+            <span>Connect directly to your ESP32 + ZMPT101B & ACS712 hardware nodes by entering your Thinger.io account parameters below.</span>
           </div>
 
           <div class="form-group">
@@ -84,7 +84,7 @@
             <label for="login-thinger-device-id">Device ID <span class="required" style="color: var(--danger);">*</span></label>
             <div class="input-icon-wrapper">
               <i data-lucide="cpu" class="input-icon"></i>
-              <input type="text" id="login-thinger-device-id" class="form-control" placeholder="e.g., esp32_pzem" required />
+              <input type="text" id="login-thinger-device-id" class="form-control" placeholder="e.g., esp32_energy" required />
             </div>
           </div>
 
@@ -92,7 +92,7 @@
             <label for="login-thinger-resource">Resource Name <span class="required" style="color: var(--danger);">*</span></label>
             <div class="input-icon-wrapper">
               <i data-lucide="database" class="input-icon"></i>
-              <input type="text" id="login-thinger-resource" class="form-control" placeholder="e.g., pzem" value="pzem" required />
+              <input type="text" id="login-thinger-resource" class="form-control" placeholder="e.g., metrics" value="metrics" required />
             </div>
           </div>
 
@@ -101,6 +101,63 @@
             <div class="input-icon-wrapper">
               <i data-lucide="key" class="input-icon"></i>
               <input type="password" id="login-thinger-token" class="form-control" placeholder="Paste your bearer token here" required />
+            </div>
+          </div>
+
+          <!-- Separate readings toggle -->
+          <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin: 0.75rem 0 0.5rem 0;">
+            <input type="checkbox" id="login-thinger-separate-toggle" style="width: 16px; height: 16px; cursor: pointer;" />
+            <label for="login-thinger-separate-toggle" style="margin-bottom: 0; cursor: pointer; font-size: 0.82rem; color: var(--text-secondary);">
+              Advanced: Separate Tokens / Resources for Sensors
+            </label>
+          </div>
+
+          <!-- Collapsible Separate Fields for Login -->
+          <div id="login-thinger-separate-container" style="display: none; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.75rem; margin-top: 0.5rem; margin-bottom: 1rem;">
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem; line-height: 1.3;">Specify the Thinger.io resource name and individual access token for each sensor metric (ZMPT101B Voltage, ACS712 Current, etc.):</p>
+            
+            <!-- Voltage -->
+            <div style="margin-bottom: 0.75rem;">
+              <span style="font-size: 0.75rem; font-weight: 600; color: var(--primary); display: block; margin-bottom: 0.25rem;">ZMPT101B Voltage (V)</span>
+              <div style="display: grid; grid-template-columns: 100px 1fr; gap: 0.5rem;">
+                <input type="text" id="login-v-resource" class="form-control" placeholder="Resource" value="voltage" style="padding: 0.35rem 0.5rem; font-size: 0.8rem;" />
+                <input type="password" id="login-v-token" class="form-control" placeholder="Voltage Access Token" style="padding: 0.35rem 0.5rem; font-size: 0.8rem;" />
+              </div>
+            </div>
+
+            <!-- Current -->
+            <div style="margin-bottom: 0.75rem;">
+              <span style="font-size: 0.75rem; font-weight: 600; color: var(--primary); display: block; margin-bottom: 0.25rem;">ACS712 Current (A)</span>
+              <div style="display: grid; grid-template-columns: 100px 1fr; gap: 0.5rem;">
+                <input type="text" id="login-i-resource" class="form-control" placeholder="Resource" value="current" style="padding: 0.35rem 0.5rem; font-size: 0.8rem;" />
+                <input type="password" id="login-i-token" class="form-control" placeholder="Current Access Token" style="padding: 0.35rem 0.5rem; font-size: 0.8rem;" />
+              </div>
+            </div>
+
+            <!-- Active Power -->
+            <div style="margin-bottom: 0.75rem;">
+              <span style="font-size: 0.75rem; font-weight: 600; color: var(--primary); display: block; margin-bottom: 0.25rem;">Active Power (W)</span>
+              <div style="display: grid; grid-template-columns: 100px 1fr; gap: 0.5rem;">
+                <input type="text" id="login-p-resource" class="form-control" placeholder="Resource" value="power" style="padding: 0.35rem 0.5rem; font-size: 0.8rem;" />
+                <input type="password" id="login-p-token" class="form-control" placeholder="Power Access Token" style="padding: 0.35rem 0.5rem; font-size: 0.8rem;" />
+              </div>
+            </div>
+
+            <!-- Total Energy -->
+            <div style="margin-bottom: 0.75rem;">
+              <span style="font-size: 0.75rem; font-weight: 600; color: var(--primary); display: block; margin-bottom: 0.25rem;">Total Energy (kWh)</span>
+              <div style="display: grid; grid-template-columns: 100px 1fr; gap: 0.5rem;">
+                <input type="text" id="login-e-resource" class="form-control" placeholder="Resource" value="energy" style="padding: 0.35rem 0.5rem; font-size: 0.8rem;" />
+                <input type="password" id="login-e-token" class="form-control" placeholder="Energy Access Token" style="padding: 0.35rem 0.5rem; font-size: 0.8rem;" />
+              </div>
+            </div>
+
+            <!-- Power Factor -->
+            <div>
+              <span style="font-size: 0.75rem; font-weight: 600; color: var(--primary); display: block; margin-bottom: 0.25rem;">Power Factor (PF)</span>
+              <div style="background: rgba(255, 255, 255, 0.03); padding: 0.5rem; border: 1px dashed var(--border-color); border-radius: var(--radius-sm); font-size: 0.75rem; color: var(--text-muted); text-align: center; line-height: 1.3;">
+                Calculated locally on-site using: <span style="font-family: monospace;">Active Power / (Voltage * Current)</span>
+              </div>
             </div>
           </div>
 
@@ -212,13 +269,13 @@
           <!-- Thinger Device ID -->
           <div class="form-group">
             <label for="thinger-device-id">Device ID</label>
-            <input type="text" id="thinger-device-id" class="form-control" placeholder="e.g., esp32_pzem" value="" />
+            <input type="text" id="thinger-device-id" class="form-control" placeholder="e.g., esp32_energy" value="" />
           </div>
 
           <!-- Thinger Resource Name -->
           <div class="form-group">
             <label for="thinger-resource">Resource Name</label>
-            <input type="text" id="thinger-resource" class="form-control" placeholder="e.g., pzem" value="pzem" />
+            <input type="text" id="thinger-resource" class="form-control" placeholder="e.g., metrics" value="metrics" />
           </div>
 
           <!-- Thinger Access Token -->
@@ -233,6 +290,69 @@
             <label for="thinger-demo-mode" style="margin-bottom: 0; cursor: pointer; font-weight: 500;">
               Enable Demo Mode (Generate simulated data if Thinger.io is offline)
             </label>
+          </div>
+
+          <!-- Separate readings toggle in settings -->
+          <div class="form-group" style="grid-column: span 2; display: flex; align-items: center; gap: 0.75rem; margin-top: 0.5rem;">
+            <input type="checkbox" id="thinger-separate-toggle" style="width: 18px; height: 18px; cursor: pointer;" />
+            <label for="thinger-separate-toggle" style="margin-bottom: 0; cursor: pointer; font-weight: 500;">
+              Advanced: Use Separate Tokens / Resources for Sensors
+            </label>
+          </div>
+
+          <!-- Collapsible Separate Fields for Settings -->
+          <div id="thinger-separate-container" style="grid-column: span 2; display: none; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1rem; margin-top: 0.5rem;">
+            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.75rem; line-height: 1.4;">Specify the Thinger.io resource name and access token for each separate sensor module:</p>
+            
+            <div class="settings-grid" style="grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 0;">
+              <!-- Voltage -->
+              <div class="form-group">
+                <label style="color: var(--primary); font-size: 0.75rem; font-weight: 600;">Voltage (ZMPT101B) Resource</label>
+                <input type="text" id="settings-v-resource" class="form-control" placeholder="e.g., voltage" value="voltage" />
+              </div>
+              <div class="form-group">
+                <label style="color: var(--primary); font-size: 0.75rem; font-weight: 600;">Voltage (ZMPT101B) Token</label>
+                <input type="password" id="settings-v-token" class="form-control" placeholder="Leave empty to use main token" />
+              </div>
+
+              <!-- Current -->
+              <div class="form-group">
+                <label style="color: var(--primary); font-size: 0.75rem; font-weight: 600;">Current (ACS712) Resource</label>
+                <input type="text" id="settings-i-resource" class="form-control" placeholder="e.g., current" value="current" />
+              </div>
+              <div class="form-group">
+                <label style="color: var(--primary); font-size: 0.75rem; font-weight: 600;">Current (ACS712) Token</label>
+                <input type="password" id="settings-i-token" class="form-control" placeholder="Leave empty to use main token" />
+              </div>
+
+              <!-- Power -->
+              <div class="form-group">
+                <label style="color: var(--primary); font-size: 0.75rem; font-weight: 600;">Active Power Resource</label>
+                <input type="text" id="settings-p-resource" class="form-control" placeholder="e.g., power" value="power" />
+              </div>
+              <div class="form-group">
+                <label style="color: var(--primary); font-size: 0.75rem; font-weight: 600;">Active Power Token</label>
+                <input type="password" id="settings-p-token" class="form-control" placeholder="Leave empty to use main token" />
+              </div>
+
+              <!-- Energy -->
+              <div class="form-group">
+                <label style="color: var(--primary); font-size: 0.75rem; font-weight: 600;">Total Energy Resource</label>
+                <input type="text" id="settings-e-resource" class="form-control" placeholder="e.g., energy" value="energy" />
+              </div>
+              <div class="form-group">
+                <label style="color: var(--primary); font-size: 0.75rem; font-weight: 600;">Total Energy Token</label>
+                <input type="password" id="settings-e-token" class="form-control" placeholder="Leave empty to use main token" />
+              </div>
+
+              <!-- PF -->
+              <div class="form-group" style="grid-column: span 2;">
+                <label style="color: var(--primary); font-size: 0.75rem; font-weight: 600;">Power Factor (PF)</label>
+                <div style="background: rgba(255, 255, 255, 0.03); padding: 0.65rem; border: 1px dashed var(--border-color); border-radius: var(--radius-sm); font-size: 0.8rem; color: var(--text-muted); text-align: center; line-height: 1.4;">
+                  Calculated locally on-site using: <span style="font-family: monospace; color: var(--primary);">Active Power / (Voltage * Current)</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         
@@ -313,11 +433,11 @@
             <div class="card frequency-card" id="card-frequency">
               <div class="card-header-simple">
                 <span class="card-title-simple">Grid Frequency</span>
-                <div class="card-icon-container"><i data-lucide="activity"></i></div>
+                <div class="card-icon-container"><i data-lucide="refresh-cw"></i></div>
               </div>
-              <div class="card-value mono" id="frequency-val">0.0 Hz</div>
+              <div class="card-value mono" id="frequency-val">50.00 Hz</div>
               <div class="card-subtext" id="frequency-stability">
-                Sync Status: Offline
+                <span style="color: var(--text-muted);">Synchronized (50 Hz)</span>
               </div>
             </div>
             
@@ -426,7 +546,7 @@
           <!-- Energy Health Score Card -->
           <section class="card" id="card-health-score">
             <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-              <i data-lucide="activity"></i> Grid Health Index
+              <i data-lucide="shield-check"></i> Grid Health Index
             </h3>
             
             <div class="health-score-container" id="health-gauge-container">
@@ -445,8 +565,10 @@
               <div class="health-status-badge health-poor" id="health-score-badge">Offline</div>
               
               <!-- Metrics Breakdown -->
-              <div class="health-breakdown" id="health-breakdown-details" style="padding: 1rem 0 0 0;">
-                <div class="health-breakdown-title">Diagnostic Metrics</div>
+              <div class="health-breakdown" id="health-breakdown-details">
+                <div class="health-breakdown-title">
+                  <i data-lucide="sliders" style="width: 14px; height: 14px; color: var(--text-muted); flex-shrink: 0;"></i> Diagnostic Metrics
+                </div>
                 
                 <div class="health-breakdown-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0;">
                   <span style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; color: var(--text-secondary);">
@@ -523,6 +645,455 @@
           </section>
 
         </div>
+
+        <!-- ML Energy Budget & Appliance Runtime Planner -->
+        <section class="card ml-planner-card" id="card-ml-energy-planner" style="grid-column: span 12; margin-top: 0.5rem;">
+          <div class="ml-planner-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+            <div>
+              <h2 style="font-size: 1.2rem; display: flex; align-items: center; gap: 0.6rem; color: var(--text-primary); margin-bottom: 0.25rem;">
+                <i data-lucide="brain" style="color: var(--primary);"></i> ML Energy Budget & Runtime Planner
+              </h2>
+              <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">
+                Deterministic budget fitting algorithm (Formula: Energy = (W/1000) × Hours; Cost = kWh × 8 ₹)
+              </p>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+              <span class="badge" style="background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.2); padding: 0.35rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; gap: 0.35rem;">
+                <i data-lucide="cpu" style="width: 12px; height: 12px;"></i> API Active (/api/calculate)
+              </span>
+            </div>
+          </div>
+
+          <div class="ml-planner-grid" style="display: grid; grid-template-columns: 1fr 1.1fr; gap: 1.5rem;">
+            <!-- Left Panel: Budget & Appliance Inputs -->
+            <div class="ml-planner-inputs" style="background: var(--bg-primary); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+              <h3 style="font-size: 1rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; color: var(--text-primary);">
+                <i data-lucide="sliders" style="width: 16px; height: 16px; color: var(--primary);"></i> Monthly Budget & Appliances
+              </h3>
+
+              <div class="form-group" style="margin-bottom: 1.25rem;">
+                <label for="ml-budget-input" style="font-weight: 600; color: var(--text-secondary);">Monthly Budget (₹ INR)</label>
+                <div class="input-icon-wrapper" style="position: relative;">
+                  <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-weight: 600; color: var(--text-muted); font-size: 0.9rem;">₹</span>
+                  <input type="number" id="ml-budget-input" class="form-control" value="1200" min="1" step="10" style="padding-left: 2rem;" placeholder="e.g., 1200" required />
+                </div>
+                <small style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">
+                  Daily Budget cap: <strong id="ml-daily-budget-calc" style="color: var(--text-primary);">₹40.00 / day</strong> (30-day assumption)
+                </small>
+              </div>
+
+              <div class="appliances-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Connected Appliances</label>
+                <span style="font-size: 0.72rem; color: var(--text-muted);">Priority (1 = Low, 10 = High)</span>
+              </div>
+
+              <div id="ml-appliance-rows-container" style="display: flex; flex-direction: column; gap: 0.6rem; max-height: 280px; overflow-y: auto; padding-right: 0.25rem; margin-bottom: 1rem;">
+                <!-- Dynamically injected rows -->
+              </div>
+
+              <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                <button type="button" class="btn btn-secondary" id="ml-add-appliance-btn" style="flex: 1; min-width: 130px; font-size: 0.85rem; padding: 0.5rem 0.75rem;">
+                  <i data-lucide="plus"></i> Add Appliance
+                </button>
+                <button type="button" class="btn btn-primary" id="ml-calculate-btn" style="flex: 1.2; min-width: 150px; font-size: 0.85rem; padding: 0.5rem 0.75rem; background-color: var(--primary); color: #09090b;">
+                  <i data-lucide="calculator"></i> Calculate Plan
+                </button>
+                <button type="button" class="btn btn-secondary" id="ml-refine-btn" style="flex: 1; min-width: 120px; font-size: 0.85rem; padding: 0.5rem 0.75rem;">
+                  <i data-lucide="zap"></i> Refine
+                </button>
+              </div>
+            </div>
+
+            <!-- Right Panel: Energy Plan Execution Results -->
+            <div class="ml-planner-results" style="background: var(--bg-primary); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); display: flex; flex-direction: column; justify-content: space-between;">
+              <div>
+                <h3 style="font-size: 1rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; color: var(--text-primary); flex-wrap: wrap; gap: 0.5rem;">
+                  <span style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i data-lucide="pie-chart" style="width: 16px; height: 16px; color: var(--success);"></i> Daily Runtime Allocation
+                  </span>
+                  <span id="ml-plan-status-badge" class="badge" style="font-size: 0.72rem; background: var(--bg-accent); padding: 0.2rem 0.6rem; border-radius: 4px; color: var(--text-secondary);">Ready</span>
+                </h3>
+
+                <!-- Summary Alert Box -->
+                <div id="ml-summary-box" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: var(--radius-sm); padding: 0.75rem 0.85rem; font-size: 0.82rem; color: var(--text-secondary); line-height: 1.45; margin-bottom: 1rem;">
+                  Click <strong>Calculate Plan</strong> to run the budget optimization algorithm across your appliances.
+                </div>
+
+                <!-- KPI Cards Row -->
+                <div class="ml-kpi-row" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 1rem;">
+                  <div style="background: var(--bg-card); padding: 0.6rem 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                    <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">Daily Budget</div>
+                    <div id="ml-kpi-daily-budget" class="mono" style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary); margin-top: 0.1rem;">₹40.00</div>
+                  </div>
+                  <div style="background: var(--bg-card); padding: 0.6rem 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                    <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">Daily Projected</div>
+                    <div id="ml-kpi-daily-projected" class="mono" style="font-weight: 700; font-size: 0.95rem; color: var(--primary); margin-top: 0.1rem;">₹0.00</div>
+                  </div>
+                  <div style="background: var(--bg-card); padding: 0.6rem 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                    <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">Monthly Projected</div>
+                    <div id="ml-kpi-monthly-projected" class="mono" style="font-weight: 700; font-size: 0.95rem; color: var(--warning); margin-top: 0.1rem;">₹0.00</div>
+                  </div>
+                </div>
+
+                <!-- Appliance Allocation Table -->
+                <div style="overflow-x: auto;">
+                  <table class="wiring-table" style="width: 100%; border-collapse: collapse; font-size: 0.82rem;">
+                    <thead>
+                      <tr style="background: var(--bg-accent);">
+                        <th style="padding: 0.5rem; text-align: left;">Appliance</th>
+                        <th style="padding: 0.5rem; text-align: center;">Power (W)</th>
+                        <th style="padding: 0.5rem; text-align: center;">Suggested Daily Hrs</th>
+                        <th style="padding: 0.5rem; text-align: right;">Est. Cost / Day (₹)</th>
+                      </tr>
+                    </thead>
+                    <tbody id="ml-result-table-body">
+                      <tr>
+                        <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 1.5rem 0.5rem;">
+                          No calculation run yet. Click Calculate Plan above.
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Collapsible Raw JSON Response Toggle -->
+              <details style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 0.5rem;">
+                <summary style="font-size: 0.75rem; color: var(--text-muted); cursor: pointer; user-select: none;">
+                  View API JSON Payload Output
+                </summary>
+                <pre id="ml-raw-json-block" class="mono" style="background: #09090b; color: #34d399; padding: 0.75rem; border-radius: var(--radius-sm); font-size: 0.72rem; margin-top: 0.5rem; max-height: 180px; overflow-y: auto; white-space: pre-wrap; word-break: break-all;">{}</pre>
+              </details>
+            </div>
+          </div>
+        </section>
+
+        <!-- Email Notifications & Energy Report Dispatcher -->
+        <section class="card email-card" id="card-email-notifications" style="grid-column: span 12; margin-top: 0.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+            <div>
+              <h2 style="font-size: 1.2rem; display: flex; align-items: center; gap: 0.6rem; color: var(--text-primary); margin-bottom: 0.25rem;">
+                <i data-lucide="mail" style="color: var(--primary);"></i> Email Report & Alert Dispatcher
+              </h2>
+              <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">
+                Send real-time energy reports, budget alerts, and consumption updates directly to any email address via `/api/send-email`.
+              </p>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <span id="email-server-status-badge" class="badge" style="background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2); padding: 0.35rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; gap: 0.35rem;">
+                <i data-lucide="radio" style="width: 12px; height: 12px;"></i> Checking Email Service...
+              </span>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.5rem;">
+            <!-- Send Email Form -->
+            <form id="email-dispatch-form" style="background: var(--bg-primary); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+              <h3 style="font-size: 1rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; color: var(--text-primary);">
+                <i data-lucide="send" style="width: 16px; height: 16px; color: var(--primary);"></i> Dispatch Email Report
+              </h3>
+
+              <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="email-recipient-input" style="font-weight: 600; color: var(--text-secondary); font-size: 0.85rem;">Recipient Email Address *</label>
+                <input type="email" id="email-recipient-input" class="form-control" placeholder="e.g. karthickraja.r.2024.ece@rajalakshmi.edu.in" required style="width: 100%; box-sizing: border-box;" />
+              </div>
+
+              <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="email-preset-select" style="font-weight: 600; color: var(--text-secondary); font-size: 0.85rem;">Report Template / Preset</label>
+                <select id="email-preset-select" class="form-control" style="width: 100%; box-sizing: border-box;">
+                  <option value="ml_plan">⚡ ML Energy Budget Plan Report (Attach Current ML Calculation)</option>
+                  <option value="usage_alert">🚨 High Energy Consumption Alert</option>
+                  <option value="monthly_summary">📊 Monthly Energy Dashboard Executive Summary</option>
+                  <option value="custom">✏️ Custom Email Message</option>
+                </select>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="email-subject-input" style="font-weight: 600; color: var(--text-secondary); font-size: 0.85rem;">Subject Line</label>
+                <input type="text" id="email-subject-input" class="form-control" value="GridPulse Smart Energy Report" required style="width: 100%; box-sizing: border-box;" />
+              </div>
+
+              <div class="form-group" style="margin-bottom: 1.25rem;">
+                <label for="email-message-input" style="font-weight: 600; color: var(--text-secondary); font-size: 0.85rem;">Message Body</label>
+                <textarea id="email-message-input" class="form-control" rows="4" style="width: 100%; box-sizing: border-box; font-family: inherit; resize: vertical;" placeholder="Enter custom email message..."></textarea>
+              </div>
+
+              <div style="margin-bottom: 1rem; display: flex; align-items: flex-start; gap: 0.6rem; background: var(--bg-card); padding: 0.65rem 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                <input type="checkbox" id="email-auto-alerts-toggle" checked style="accent-color: var(--primary); cursor: pointer; width: 16px; height: 16px; margin-top: 0.15rem;" />
+                <label for="email-auto-alerts-toggle" style="font-size: 0.8rem; color: var(--text-primary); cursor: pointer; user-select: none; line-height: 1.4;">
+                  <strong>Auto-Trigger Condition Email Alerts</strong><br/>
+                  <span style="color: var(--text-muted); font-size: 0.75rem;">Automatically sends an email alert to this recipient when Over-Voltage, Under-Voltage, Power Overload, or Budget limits are breached.</span>
+                </label>
+              </div>
+
+              <div style="display: flex; gap: 0.75rem;">
+                <button type="submit" id="email-send-btn" class="btn btn-primary" style="flex: 1; background: var(--primary); color: #09090b; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                  <i data-lucide="send"></i> Send Email Now
+                </button>
+              </div>
+            </form>
+
+            <!-- Status & Instructions Panel -->
+            <div style="background: var(--bg-primary); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); display: flex; flex-direction: column; justify-content: space-between;">
+              <div>
+                <h3 style="font-size: 1rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; color: var(--text-primary);">
+                  <i data-lucide="settings" style="width: 16px; height: 16px; color: var(--info);"></i> How Email Dispatch Works
+                </h3>
+
+                <div style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1rem;">
+                  <p style="margin-top: 0; margin-bottom: 0.6rem;">
+                    <strong>1. Immediate Delivery / Testing:</strong> If SMTP credentials are set on the server (like Gmail App Password or SendGrid), the website sends actual emails to the inbox.
+                  </p>
+                  <p style="margin-bottom: 0.6rem;">
+                    <strong>2. Built-in Simulation Mode:</strong> If SMTP credentials aren't configured yet, the API smoothly dispatches the email in simulation mode so you can test website functionality without errors!
+                  </p>
+                </div>
+
+                <div style="background: var(--bg-card); padding: 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 1rem;">
+                  <div style="font-size: 0.78rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.4rem;">🔑 Vercel Environment Configuration</div>
+                  <code style="font-size: 0.72rem; color: var(--primary); display: block; white-space: pre-wrap; line-height: 1.4;">
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your_email@gmail.com
+SMTP_PASS=your_gmail_app_password
+                  </code>
+                </div>
+
+                <h4 style="font-size: 0.85rem; margin-bottom: 0.5rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.4rem;">
+                  <i data-lucide="history" style="width: 14px; height: 14px;"></i> Recent Dispatches
+                </h4>
+                <div id="email-recent-logs-list" style="font-size: 0.78rem; color: var(--text-muted); max-height: 120px; overflow-y: auto;">
+                  No emails dispatched yet in this session.
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ZMPT101B & ACS712 Hardware Connection / Integration Manual -->
+        <section class="card hardware-guide-card" id="card-hardware-manual" style="grid-column: span 12; margin-top: 1rem;">
+          <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.25rem;">
+            <h2 style="font-size: 1.2rem; display: flex; align-items: center; gap: 0.6rem; color: var(--text-primary); margin: 0 0 0.25rem 0;">
+              <i data-lucide="book-open" style="color: var(--warning);"></i> Hardware Integration & ESP32 Live Sync Guide
+            </h2>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">
+              Connect your ZMPT101B AC voltage sensor and ACS712 current sensor to the ESP32 microcontroller, write the Thinger.io sketch, and verify complete endpoint connectivity.
+            </p>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1.1fr 1.2fr; gap: 1.5rem;" class="hardware-grid-responsive">
+            
+            <!-- Left Side: Wiring and Validation Checklist -->
+            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+              
+              <!-- Connection Verification Dashboard -->
+              <div style="background: var(--bg-primary); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                <h3 style="font-size: 1rem; margin-top: 0; margin-bottom: 0.85rem; display: flex; align-items: center; gap: 0.4rem; color: var(--text-primary);">
+                  <i data-lucide="radio" style="width: 16px; height: 16px; color: var(--success);"></i> Live Connectivity Diagnostic
+                </h3>
+                
+                <div style="display: flex; flex-direction: column; gap: 0.65rem; font-size: 0.82rem;">
+                  <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed rgba(255, 255, 255, 0.05); padding-bottom: 0.4rem;">
+                    <span style="color: var(--text-muted);">Current Active Server Connection:</span>
+                    <strong id="diag-active-conn" class="mono" style="color: var(--success);">Checking...</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed rgba(255, 255, 255, 0.05); padding-bottom: 0.4rem;">
+                    <span style="color: var(--text-muted);">Thinger.io Username:</span>
+                    <strong id="diag-username" class="mono" style="color: var(--text-secondary);">None (Demo Mode)</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed rgba(255, 255, 255, 0.05); padding-bottom: 0.4rem;">
+                    <span style="color: var(--text-muted);">Device ID Target:</span>
+                    <strong id="diag-device-id" class="mono" style="color: var(--text-secondary);">None</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed rgba(255, 255, 255, 0.05); padding-bottom: 0.4rem;">
+                    <span style="color: var(--text-muted);">Resource Hook:</span>
+                    <strong id="diag-resource" class="mono" style="color: var(--primary);">metrics</strong>
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    <span style="color: var(--text-muted);">API Query Endpoint URL:</span>
+                    <code id="diag-api-url" class="mono" style="font-size: 0.72rem; color: var(--warning); background: #09090b; padding: 4px 6px; border-radius: 4px; word-break: break-all; white-space: pre-wrap; margin-top: 0.2rem; border: 1px solid rgba(255,255,255,0.02);">https://api.thinger.io/v2/users/...</code>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Pinout Connection Diagram -->
+              <div style="background: var(--bg-primary); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                <h3 style="font-size: 1rem; margin-top: 0; margin-bottom: 0.85rem; display: flex; align-items: center; gap: 0.4rem; color: var(--text-primary);">
+                  <i data-lucide="cpu" style="width: 16px; height: 16px; color: var(--primary);"></i> Sensor to ESP32 Pinout Configuration
+                </h3>
+
+                <table class="hardware-wiring-table" style="width: 100%; border-collapse: collapse; font-size: 0.8rem; text-align: left;">
+                  <thead>
+                    <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted);">
+                      <th style="padding: 0.4rem 0.2rem;">Sensor Module</th>
+                      <th style="padding: 0.4rem 0.2rem;">Sensor Pin</th>
+                      <th style="padding: 0.4rem 0.2rem;">ESP32 GPIO Pin</th>
+                      <th style="padding: 0.4rem 0.2rem;">Power Source</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.03);">
+                      <td style="padding: 0.5rem 0.2rem; font-weight: 600; color: var(--text-primary);">ZMPT101B (Voltage)</td>
+                      <td style="padding: 0.5rem 0.2rem;">OUT (Analog)</td>
+                      <td style="padding: 0.5rem 0.2rem;" class="mono" style="color: var(--primary);">GPIO 34 (ADC1_CH6)</td>
+                      <td style="padding: 0.5rem 0.2rem; color: var(--success);">3.3V DC / GND</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.03);">
+                      <td style="padding: 0.5rem 0.2rem; font-weight: 600; color: var(--text-primary);">ACS712 (Current)</td>
+                      <td style="padding: 0.5rem 0.2rem;">OUT (Analog)</td>
+                      <td style="padding: 0.5rem 0.2rem;" class="mono" style="color: var(--primary);">GPIO 35 (ADC1_CH7)</td>
+                      <td style="padding: 0.5rem 0.2rem; color: var(--warning);">5.0V DC / GND</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <small style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-top: 0.6rem; line-height: 1.3;">
+                  ⚠️ <strong>Note:</strong> ZMPT101B has a multi-turn potentiometer on-board. Turn it to calibrate the signal amplitude so it does not clip the 3.3V input range of ESP32 analog pins. ACS712 requires stable 5V for accurate Hall-effect readings.
+                </small>
+              </div>
+
+              <!-- Connection Troubleshooting Checklist -->
+              <div style="background: var(--bg-primary); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                <h3 style="font-size: 1rem; margin-top: 0; margin-bottom: 0.85rem; display: flex; align-items: center; gap: 0.4rem; color: var(--text-primary);">
+                  <i data-lucide="check-square" style="width: 16px; height: 16px; color: var(--warning);"></i> Step-by-Step Validation Checklist
+                </h3>
+                <ol style="font-size: 0.8rem; color: var(--text-secondary); padding-left: 1.2rem; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; line-height: 1.45;">
+                  <li>
+                    <strong>Verify Hardware WiFi:</strong> Open Arduino Serial Monitor (115200 baud). Ensure you see <code class="mono" style="color: var(--warning);">[WiFi] Connected!</code> and <code class="mono" style="color: var(--success);">[Thinger] Connected!</code>.
+                  </li>
+                  <li>
+                    <strong>Check Thinger.io Portal:</strong> Log into console.thinger.io. Check that your Device is listed as <span style="color: var(--success); font-weight: 600;">ONLINE</span>.
+                  </li>
+                  <li>
+                    <strong>Confirm Resource Structure:</strong> In Thinger.io dashboard, check your device's API resources. You should see a resource named <code class="mono" style="color: var(--primary);">metrics</code> (or your custom name) that returns a JSON structure containing <code class="mono">voltage</code>, <code class="mono">current</code>, <code class="mono">power</code>, etc.
+                  </li>
+                  <li>
+                    <strong>Sync this Website:</strong> Enter your Thinger.io credentials in this applet's login page or Settings Drawer. The website will automatically pull real data every 2 seconds!
+                  </li>
+                </ol>
+              </div>
+
+            </div>
+
+            <!-- Right Side: ESP32 Arduino Code Block -->
+            <div style="display: flex; flex-direction: column; justify-content: space-between;">
+              <div style="background: #09090b; padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); height: 100%; display: flex; flex-direction: column;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                  <span style="font-size: 0.82rem; font-weight: 600; color: #34d399; display: flex; align-items: center; gap: 0.4rem;">
+                    <i data-lucide="code" style="width: 14px; height: 14px;"></i> ESP32 Arduino Sketch Code (ZMPT101B + ACS712)
+                  </span>
+                  <button id="copy-esp-sketch-btn" class="btn btn-secondary" style="font-size: 0.7rem; padding: 0.2rem 0.5rem; display: flex; align-items: center; gap: 0.3rem;" onclick="navigator.clipboard.writeText(document.getElementById('esp-firmware-code-text').innerText); showToast('Code Copied', 'ESP32 Arduino sketch copied to clipboard!', 'success');">
+                    <i data-lucide="copy" style="width: 12px; height: 12px;"></i> Copy Code
+                  </button>
+                </div>
+
+                <div style="flex: 1; position: relative;">
+                  <pre id="esp-firmware-code-text" class="mono" style="color: #a7f3d0; background: #09090b; padding: 0.75rem; border-radius: var(--radius-sm); font-size: 0.72rem; overflow: auto; max-height: 480px; margin: 0; line-height: 1.4; border: 1px solid rgba(255,255,255,0.02); text-align: left;">#include &lt;WiFi.h&gt;
+#include &lt;ThingerESP32.h&gt;
+
+// --- IoT Credentials ---
+#define USERNAME "your_thinger_username"
+#define DEVICE_ID "esp32_energy"
+#define DEVICE_CREDENTIAL "your_device_access_token"
+
+// --- WiFi Credentials ---
+#define WIFI_SSID "your_wifi_ssid"
+#define WIFI_WPA2_PASSWORD "your_wifi_password"
+
+// Pin definitions
+const int ZMPT101B_PIN = 34; // ZMPT101B analog OUT -> GPIO 34 (ADC1_CH6)
+const int ACS712_PIN = 35;   // ACS712 analog OUT -> GPIO 35 (ADC1_CH7)
+
+// Calibration constants (Adjust to match physical calibration values)
+const float ZMPT_CALIBRATION = 385.0; // Voltage scale factor
+const float ACS_CALIBRATION = 0.185;   // Sensitivity in V/A (185mV/A for 5A model)
+
+ThingerESP32 thing(USERNAME, DEVICE_ID, DEVICE_CREDENTIAL);
+
+// Shared electrical metrics
+float rmsVoltage = 0.0;
+float rmsCurrent = 0.0;
+float activePower = 0.0;
+double totalEnergyKwh = 0.0; // Cumulative kWh
+unsigned long lastEnergyTime = 0;
+
+void setup() {
+  Serial.begin(115200);
+  
+  // Register WiFi connection
+  thing.add_wifi(WIFI_SSID, WIFI_WPA2_PASSWORD);
+  
+  // Define Thinger.io output resource structure
+  thing["metrics"] &gt;&gt; [](pson&amp; out){
+    out["voltage"] = rmsVoltage;
+    out["current"] = rmsCurrent;
+    out["power"] = activePower;
+    out["energy"] = totalEnergyKwh;
+    out["frequency"] = 50.0; // Grid standard frequency
+    out["powerFactor"] = (rmsVoltage &gt; 0 &amp;&amp; rmsCurrent &gt; 0) ? (activePower / (rmsVoltage * rmsCurrent)) : 1.0;
+  };
+  
+  lastEnergyTime = millis();
+}
+
+void loop() {
+  thing.handle();
+  
+  // Perform measurement calculations every 2 seconds
+  static unsigned long lastMeasureTime = 0;
+  if (millis() - lastMeasureTime &gt;= 2000) {
+    calculateElectricalMetrics();
+    lastMeasureTime = millis();
+  }
+}
+
+void calculateElectricalMetrics() {
+  long voltageSum = 0;
+  int numSamples = 1000;
+  
+  // 1. ZMPT101B AC Voltage Sampling (RMS Calculation)
+  float sumSq = 0;
+  for (int i = 0; i &lt; numSamples; i++) {
+    // Offset analog values centered around 1.65V (approx 2048 counts)
+    float rawValue = analogRead(ZMPT101B_PIN) - 2048.0;
+    sumSq += (rawValue * rawValue);
+    delayMicroseconds(50); // Sample at 20kHz rate
+  }
+  float rmsADC = sqrt(sumSq / numSamples);
+  rmsVoltage = rmsADC * (3.3 / 4095.0) * ZMPT_CALIBRATION;
+  if (rmsVoltage &lt; 20.0) rmsVoltage = 0.0; // Filter out noise
+  
+  // 2. ACS712 AC Current Sampling (RMS Calculation)
+  float sumCurrentSq = 0;
+  for (int i = 0; i &lt; numSamples; i++) {
+    float adcVoltage = (analogRead(ACS712_PIN) / 4095.0) * 3.3;
+    float currentAmps = (adcVoltage - 1.65) / ACS_CALIBRATION; // Offset 1.65V center
+    sumCurrentSq += (currentAmps * currentAmps);
+    delayMicroseconds(50);
+  }
+  rmsCurrent = sqrt(sumCurrentSq / numSamples);
+  if (rmsCurrent &lt; 0.08) rmsCurrent = 0.0; // Filter out noise
+  
+  // 3. Active Power & Cumulative Energy calculation
+  float powerFactorVal = 0.90; // Standard domestic power factor assumption
+  activePower = rmsVoltage * rmsCurrent * powerFactorVal;
+  
+  // Accumulate energy (kWh = kW * Hours)
+  unsigned long now = millis();
+  double timeDeltaHours = (now - lastEnergyTime) / 3600000.0;
+  totalEnergyKwh += (activePower / 1000.0) * timeDeltaHours;
+  lastEnergyTime = now;
+  
+  // Output status logs to serial monitor
+  Serial.printf("V: %.1f V | I: %.2f A | P: %.1f W | Energy: %.6f kWh\n", 
+                rmsVoltage, rmsCurrent, activePower, totalEnergyKwh);
+}</pre>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
 
       </main>
 

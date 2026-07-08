@@ -21,7 +21,7 @@ const state = {
     current: 0.0,
     power: 0.0,
     energy: 12.85, // Cumulative starting energy
-    frequency: 0.0,
+    frequency: 50.0,
     powerFactor: 0.0,
   },
   
@@ -48,9 +48,19 @@ const state = {
     // Thinger.io Configuration Defaults
     thingerUsername: '',
     thingerDeviceId: '',
-    thingerResourceName: 'pzem',
+    thingerResourceName: 'metrics',
     thingerAccessToken: '',
     thingerDemoMode: false,
+    
+    // Advanced: Separate Tokens / Resources configuration for each metric
+    useSeparateMetrics: false,
+    metricsConfig: {
+      voltage: { resource: 'voltage', token: '' },
+      current: { resource: 'current', token: '' },
+      power: { resource: 'power', token: '' },
+      energy: { resource: 'energy', token: '' },
+      powerFactor: { resource: 'pf', token: '' }
+    },
     
     // Alarm Thresholds
     thresholds: {
@@ -180,6 +190,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // Register DOM event listeners
   registerEventListeners();
   
+  // Initialize ML Energy Budget & Runtime Planner Module
+  initMlEnergyPlanner();
+
+  // Initialize Email Dispatcher Module
+  initEmailDispatcher();
+
   // Check session persistence
   checkActiveSession();
   
@@ -198,6 +214,9 @@ function loadConfigFromStorage() {
     try {
       const parsed = JSON.parse(savedConfig);
       state.config = { ...state.config, ...parsed };
+      if (parsed.metricsConfig) {
+        state.config.metricsConfig = { ...state.config.metricsConfig, ...parsed.metricsConfig };
+      }
     } catch (e) {
       console.error("Failed to parse saved config, using defaults", e);
     }
@@ -237,7 +256,7 @@ function populateUIInputs() {
     elements.thingerDeviceId.value = state.config.thingerDeviceId || '';
   }
   if (elements.thingerResource) {
-    elements.thingerResource.value = state.config.thingerResourceName || 'pzem';
+    elements.thingerResource.value = state.config.thingerResourceName || 'metrics';
   }
   if (elements.thingerToken) {
     elements.thingerToken.value = state.config.thingerAccessToken || '';
@@ -255,15 +274,91 @@ function populateUIInputs() {
 
   if (loginThingerUser) loginThingerUser.value = state.config.thingerUsername || '';
   if (loginThingerDevice) loginThingerDevice.value = state.config.thingerDeviceId || '';
-  if (loginThingerResource) loginThingerResource.value = state.config.thingerResourceName || 'pzem';
+  if (loginThingerResource) loginThingerResource.value = state.config.thingerResourceName || 'metrics';
   if (loginThingerToken) loginThingerToken.value = state.config.thingerAccessToken || '';
   if (loginThingerDemo) loginThingerDemo.checked = state.config.thingerDemoMode !== undefined ? state.config.thingerDemoMode : true;
+
+  // Populate separate metrics in settings drawer
+  const settingsSeparateToggle = document.getElementById('thinger-separate-toggle');
+  const settingsSeparateContainer = document.getElementById('thinger-separate-container');
+  if (settingsSeparateToggle && settingsSeparateContainer) {
+    settingsSeparateToggle.checked = state.config.useSeparateMetrics || false;
+    settingsSeparateContainer.style.display = state.config.useSeparateMetrics ? 'block' : 'none';
+    
+    if (state.config.metricsConfig) {
+      if (document.getElementById('settings-v-resource')) document.getElementById('settings-v-resource').value = state.config.metricsConfig.voltage?.resource || 'voltage';
+      if (document.getElementById('settings-v-token')) document.getElementById('settings-v-token').value = state.config.metricsConfig.voltage?.token || '';
+      if (document.getElementById('settings-i-resource')) document.getElementById('settings-i-resource').value = state.config.metricsConfig.current?.resource || 'current';
+      if (document.getElementById('settings-i-token')) document.getElementById('settings-i-token').value = state.config.metricsConfig.current?.token || '';
+      if (document.getElementById('settings-p-resource')) document.getElementById('settings-p-resource').value = state.config.metricsConfig.power?.resource || 'power';
+      if (document.getElementById('settings-p-token')) document.getElementById('settings-p-token').value = state.config.metricsConfig.power?.token || '';
+      if (document.getElementById('settings-e-resource')) document.getElementById('settings-e-resource').value = state.config.metricsConfig.energy?.resource || 'energy';
+      if (document.getElementById('settings-e-token')) document.getElementById('settings-e-token').value = state.config.metricsConfig.energy?.token || '';
+      if (document.getElementById('settings-pf-resource')) document.getElementById('settings-pf-resource').value = state.config.metricsConfig.powerFactor?.resource || 'pf';
+      if (document.getElementById('settings-pf-token')) document.getElementById('settings-pf-token').value = state.config.metricsConfig.powerFactor?.token || '';
+    }
+  }
+
+  // Populate separate metrics in login screen
+  const loginSeparateToggle = document.getElementById('login-thinger-separate-toggle');
+  const loginSeparateContainer = document.getElementById('login-thinger-separate-container');
+  if (loginSeparateToggle && loginSeparateContainer) {
+    loginSeparateToggle.checked = state.config.useSeparateMetrics || false;
+    loginSeparateContainer.style.display = state.config.useSeparateMetrics ? 'block' : 'none';
+    
+    if (loginSeparateToggle.checked) {
+      if (loginThingerResource) loginThingerResource.removeAttribute('required');
+      if (loginThingerToken) loginThingerToken.removeAttribute('required');
+    } else {
+      if (loginThingerResource) loginThingerResource.setAttribute('required', 'required');
+      if (loginThingerToken) loginThingerToken.setAttribute('required', 'required');
+    }
+    
+    if (state.config.metricsConfig) {
+      if (document.getElementById('login-v-resource')) document.getElementById('login-v-resource').value = state.config.metricsConfig.voltage?.resource || 'voltage';
+      if (document.getElementById('login-v-token')) document.getElementById('login-v-token').value = state.config.metricsConfig.voltage?.token || '';
+      if (document.getElementById('login-i-resource')) document.getElementById('login-i-resource').value = state.config.metricsConfig.current?.resource || 'current';
+      if (document.getElementById('login-i-token')) document.getElementById('login-i-token').value = state.config.metricsConfig.current?.token || '';
+      if (document.getElementById('login-p-resource')) document.getElementById('login-p-resource').value = state.config.metricsConfig.power?.resource || 'power';
+      if (document.getElementById('login-p-token')) document.getElementById('login-p-token').value = state.config.metricsConfig.power?.token || '';
+      if (document.getElementById('login-e-resource')) document.getElementById('login-e-resource').value = state.config.metricsConfig.energy?.resource || 'energy';
+      if (document.getElementById('login-e-token')) document.getElementById('login-e-token').value = state.config.metricsConfig.energy?.token || '';
+      if (document.getElementById('login-pf-resource')) document.getElementById('login-pf-resource').value = state.config.metricsConfig.powerFactor?.resource || 'pf';
+      if (document.getElementById('login-pf-token')) document.getElementById('login-pf-token').value = state.config.metricsConfig.powerFactor?.token || '';
+    }
+  }
 }
 
 /**
  * Binds event handlers to user controls
  */
 function registerEventListeners() {
+  // Advanced Separate Tokens Toggle Interactions
+  const loginSeparateToggle = document.getElementById('login-thinger-separate-toggle');
+  const loginSeparateContainer = document.getElementById('login-thinger-separate-container');
+  if (loginSeparateToggle && loginSeparateContainer) {
+    loginSeparateToggle.addEventListener('change', () => {
+      loginSeparateContainer.style.display = loginSeparateToggle.checked ? 'block' : 'none';
+      const genericResInput = document.getElementById('login-thinger-resource');
+      const genericTokenInput = document.getElementById('login-thinger-token');
+      if (loginSeparateToggle.checked) {
+        if (genericResInput) genericResInput.removeAttribute('required');
+        if (genericTokenInput) genericTokenInput.removeAttribute('required');
+      } else {
+        if (genericResInput) genericResInput.setAttribute('required', 'required');
+        if (genericTokenInput) genericTokenInput.setAttribute('required', 'required');
+      }
+    });
+  }
+
+  const settingsSeparateToggle = document.getElementById('thinger-separate-toggle');
+  const settingsSeparateContainer = document.getElementById('thinger-separate-container');
+  if (settingsSeparateToggle && settingsSeparateContainer) {
+    settingsSeparateToggle.addEventListener('change', () => {
+      settingsSeparateContainer.style.display = settingsSeparateToggle.checked ? 'block' : 'none';
+    });
+  }
+
   // Tab Switch Handling
   if (elements.tabSimulation && elements.tabIot) {
     elements.tabSimulation.addEventListener('click', () => {
@@ -309,13 +404,35 @@ function registerEventListeners() {
       const submitBtn = elements.thingerLoginForm.querySelector('button[type="submit"]');
       const originalBtnHTML = submitBtn.innerHTML;
       
+      const separateToggle = document.getElementById('login-thinger-separate-toggle');
+      const useSeparate = separateToggle ? separateToggle.checked : false;
+      
       const thingerUser = document.getElementById('login-thinger-username').value.trim();
       const thingerDevice = document.getElementById('login-thinger-device-id').value.trim();
-      const thingerRes = document.getElementById('login-thinger-resource').value.trim();
-      const thingerTkn = document.getElementById('login-thinger-token').value.trim();
+      const thingerRes = useSeparate ? '' : document.getElementById('login-thinger-resource').value.trim();
+      const thingerTkn = useSeparate ? '' : document.getElementById('login-thinger-token').value.trim();
       const thingerDemo = document.getElementById('login-thinger-demo').checked;
 
-      if (!thingerUser || !thingerDevice || !thingerTkn) {
+      let vRes = 'voltage', vTkn = '';
+      let iRes = 'current', iTkn = '';
+      let pRes = 'power', pTkn = '';
+      let eRes = 'energy', eTkn = '';
+      let pfRes = 'pf', pfTkn = '';
+
+      if (useSeparate) {
+        vRes = document.getElementById('login-v-resource').value.trim() || 'voltage';
+        vTkn = document.getElementById('login-v-token').value.trim();
+        iRes = document.getElementById('login-i-resource').value.trim() || 'current';
+        iTkn = document.getElementById('login-i-token').value.trim();
+        pRes = document.getElementById('login-p-resource').value.trim() || 'power';
+        pTkn = document.getElementById('login-p-token').value.trim();
+        eRes = document.getElementById('login-e-resource').value.trim() || 'energy';
+        eTkn = document.getElementById('login-e-token').value.trim();
+        pfRes = 'pf';
+        pfTkn = '';
+      }
+
+      if (!thingerUser || !thingerDevice || (!useSeparate && (!thingerTkn || !thingerRes))) {
         showToast("Incomplete Configuration", "Please fill in all the required Thinger.io details.", "warning");
         return;
       }
@@ -326,7 +443,11 @@ function registerEventListeners() {
       if (window.lucide) window.lucide.createIcons();
       
       // Perform a validation fetch to verify credentials before logging in
-      const testUrl = `https://api.thinger.io/v2/users/${thingerUser}/devices/${thingerDevice}/${thingerRes}?authorization=${thingerTkn}`;
+      const testUrl = useSeparate
+        ? `https://api.thinger.io/v2/users/${thingerUser}/devices/${thingerDevice}/${vRes}?authorization=${vTkn}`
+        : `https://api.thinger.io/v2/users/${thingerUser}/devices/${thingerDevice}/${thingerRes}?authorization=${thingerTkn}`;
+      
+      const validationToken = useSeparate ? vTkn : thingerTkn;
       
       let validationSuccess = false;
       let errorReason = "Unknown error";
@@ -339,7 +460,7 @@ function registerEventListeners() {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
-            'Authorization': `Bearer ${thingerTkn}`
+            'Authorization': `Bearer ${validationToken}`
           },
           signal: controller.signal
         });
@@ -350,9 +471,9 @@ function registerEventListeners() {
           const data = await response.json();
           // Verify we get a payload back
           let payload = data;
-          if (data && data.out) {
+          if (data && data.out !== undefined) {
             payload = data.out;
-          } else if (data && data.in) {
+          } else if (data && data.in !== undefined) {
             payload = data.in;
           }
           
@@ -387,13 +508,28 @@ function registerEventListeners() {
         state.config.thingerResourceName = thingerRes;
         state.config.thingerAccessToken = thingerTkn;
         state.config.thingerDemoMode = thingerDemo;
+        state.config.useSeparateMetrics = useSeparate;
 
-        // Update thresholds settings input fields in the settings drawer
-        if (elements.thingerUsername) elements.thingerUsername.value = thingerUser;
-        if (elements.thingerDeviceId) elements.thingerDeviceId.value = thingerDevice;
-        if (elements.thingerResource) elements.thingerResource.value = thingerRes;
-        if (elements.thingerToken) elements.thingerToken.value = thingerTkn;
-        if (elements.thingerDemoMode) elements.thingerDemoMode.checked = thingerDemo;
+        if (useSeparate) {
+          state.config.metricsConfig = {
+            voltage: { resource: vRes, token: vTkn },
+            current: { resource: iRes, token: iTkn },
+            power: { resource: pRes, token: pTkn },
+            energy: { resource: eRes, token: eTkn },
+            powerFactor: { resource: pfRes, token: pfTkn }
+          };
+        } else {
+          state.config.metricsConfig = {
+            voltage: { resource: 'voltage', token: '' },
+            current: { resource: 'current', token: '' },
+            power: { resource: 'power', token: '' },
+            energy: { resource: 'energy', token: '' },
+            powerFactor: { resource: 'pf', token: '' }
+          };
+        }
+
+        // Update threshold inputs and setting drawer fields
+        populateUIInputs();
 
         // Save to localStorage
         localStorage.setItem('smart_meter_config', JSON.stringify(state.config));
@@ -411,12 +547,27 @@ function registerEventListeners() {
           state.config.thingerResourceName = thingerRes;
           state.config.thingerAccessToken = thingerTkn;
           state.config.thingerDemoMode = thingerDemo;
+          state.config.useSeparateMetrics = useSeparate;
 
-          if (elements.thingerUsername) elements.thingerUsername.value = thingerUser;
-          if (elements.thingerDeviceId) elements.thingerDeviceId.value = thingerDevice;
-          if (elements.thingerResource) elements.thingerResource.value = thingerRes;
-          if (elements.thingerToken) elements.thingerToken.value = thingerTkn;
-          if (elements.thingerDemoMode) elements.thingerDemoMode.checked = thingerDemo;
+          if (useSeparate) {
+            state.config.metricsConfig = {
+              voltage: { resource: vRes, token: vTkn },
+              current: { resource: iRes, token: iTkn },
+              power: { resource: pRes, token: pTkn },
+              energy: { resource: eRes, token: eTkn },
+              powerFactor: { resource: pfRes, token: pfTkn }
+            };
+          } else {
+            state.config.metricsConfig = {
+              voltage: { resource: 'voltage', token: '' },
+              current: { resource: 'current', token: '' },
+              power: { resource: 'power', token: '' },
+              energy: { resource: 'energy', token: '' },
+              powerFactor: { resource: 'pf', token: '' }
+            };
+          }
+
+          populateUIInputs();
 
           localStorage.setItem('smart_meter_config', JSON.stringify(state.config));
 
@@ -486,7 +637,7 @@ function registerEventListeners() {
       
       if (elements.thingerUsername) elements.thingerUsername.value = '';
       if (elements.thingerDeviceId) elements.thingerDeviceId.value = '';
-      if (elements.thingerResource) elements.thingerResource.value = 'pzem';
+      if (elements.thingerResource) elements.thingerResource.value = 'metrics';
       if (elements.thingerToken) elements.thingerToken.value = '';
       if (elements.thingerDemoMode) elements.thingerDemoMode.checked = false;
       
@@ -496,7 +647,7 @@ function registerEventListeners() {
         targetLimit: 50,
         thingerUsername: '',
         thingerDeviceId: '',
-        thingerResourceName: 'pzem',
+        thingerResourceName: 'metrics',
         thingerAccessToken: '',
         thingerDemoMode: false,
         thresholds: {
@@ -529,9 +680,48 @@ function registerEventListeners() {
     // Save Thinger.io configurations
     state.config.thingerUsername = elements.thingerUsername ? elements.thingerUsername.value.trim() : '';
     state.config.thingerDeviceId = elements.thingerDeviceId ? elements.thingerDeviceId.value.trim() : '';
-    state.config.thingerResourceName = elements.thingerResource ? elements.thingerResource.value.trim() : 'pzem';
+    state.config.thingerResourceName = elements.thingerResource ? elements.thingerResource.value.trim() : 'metrics';
     state.config.thingerAccessToken = elements.thingerToken ? elements.thingerToken.value.trim() : '';
     state.config.thingerDemoMode = elements.thingerDemoMode ? elements.thingerDemoMode.checked : false;
+    
+    const settingsSeparateToggle = document.getElementById('thinger-separate-toggle');
+    state.config.useSeparateMetrics = settingsSeparateToggle ? settingsSeparateToggle.checked : false;
+    
+    if (state.config.useSeparateMetrics) {
+      state.config.metricsConfig = {
+        voltage: {
+          resource: document.getElementById('settings-v-resource')?.value.trim() || 'voltage',
+          token: document.getElementById('settings-v-token')?.value.trim() || ''
+        },
+        current: {
+          resource: document.getElementById('settings-i-resource')?.value.trim() || 'current',
+          token: document.getElementById('settings-i-token')?.value.trim() || ''
+        },
+        power: {
+          resource: document.getElementById('settings-p-resource')?.value.trim() || 'power',
+          token: document.getElementById('settings-p-token')?.value.trim() || ''
+        },
+        energy: {
+          resource: document.getElementById('settings-e-resource')?.value.trim() || 'energy',
+          token: document.getElementById('settings-e-token')?.value.trim() || ''
+        },
+        powerFactor: {
+          resource: document.getElementById('settings-pf-resource')?.value.trim() || 'pf',
+          token: document.getElementById('settings-pf-token')?.value.trim() || ''
+        }
+      };
+    } else {
+      state.config.metricsConfig = {
+        voltage: { resource: 'voltage', token: '' },
+        current: { resource: 'current', token: '' },
+        power: { resource: 'power', token: '' },
+        energy: { resource: 'energy', token: '' },
+        powerFactor: { resource: 'pf', token: '' }
+      };
+    }
+
+    // Synchronize inputs across forms
+    populateUIInputs();
     
     // Save to LocalStorage
     localStorage.setItem('smart_meter_config', JSON.stringify(state.config));
@@ -584,6 +774,8 @@ function registerEventListeners() {
       updateChartWithActiveTab();
     });
   });
+
+
 }
 
 /**
@@ -621,11 +813,147 @@ async function executeDataCycle() {
 async function fetchThingerData() {
   const username = state.config.thingerUsername;
   const deviceId = state.config.thingerDeviceId;
-  const resource = state.config.thingerResourceName || 'pzem';
+  const resource = state.config.thingerResourceName || 'metrics';
   const token = state.config.thingerAccessToken;
   const isDemo = state.config.thingerDemoMode;
 
-  if (!username || !deviceId || !token) {
+  if (!username || !deviceId) {
+    if (isDemo) {
+      state.isDeviceOnline = true;
+      updateStatusIndicator(true, "Demo Mode: Connected");
+      generateSimulatedData();
+    } else {
+      state.isDeviceOnline = false;
+      updateStatusIndicator(false, "Device Offline");
+      setMetricsToZero();
+    }
+    return;
+  }
+
+  // Handle advanced separate token/resource setup
+  if (state.config.useSeparateMetrics) {
+    const metricsToFetch = ['voltage', 'current', 'power', 'energy'];
+    const fetchPromises = metricsToFetch.map(async (metricKey) => {
+      const cfg = state.config.metricsConfig?.[metricKey] || { resource: metricKey, token: '' };
+      const mResource = cfg.resource || metricKey;
+      const mToken = cfg.token || token;
+      
+      if (!mResource || !mToken) return { key: metricKey, value: null };
+      
+      const mUrl = `https://api.thinger.io/v2/users/${username}/devices/${deviceId}/${mResource}?authorization=${mToken}`;
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 seconds timeout per endpoint
+        
+        const response = await fetch(mUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${mToken}`
+          },
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        if (response.ok) {
+          const data = await response.json();
+          let payload = data;
+          if (data && data.out !== undefined) payload = data.out;
+          else if (data && data.in !== undefined) payload = data.in;
+          
+          let val = null;
+          if (typeof payload === 'object' && payload !== null) {
+            // Check for potential nested names
+            const possibleKeys = [metricKey.toLowerCase(), 'value', 'val', 'out', 'in'];
+            for (const key of Object.keys(payload)) {
+              if (possibleKeys.some(pk => key.toLowerCase().includes(pk))) {
+                val = parseFloat(payload[key]);
+                break;
+              }
+            }
+            if (val === null && Object.keys(payload).length > 0) {
+              val = parseFloat(payload[Object.keys(payload)[0]]);
+            }
+          } else {
+            val = parseFloat(payload);
+          }
+          return { key: metricKey, value: val };
+        }
+      } catch (err) {
+        console.warn(`Separate fetch failed for ${metricKey}:`, err);
+      }
+      return { key: metricKey, value: null };
+    });
+
+    try {
+      const results = await Promise.all(fetchPromises);
+      let anySuccess = false;
+      
+      results.forEach(res => {
+        if (res.value !== null && !isNaN(res.value)) {
+          anySuccess = true;
+          if (res.key === 'voltage') state.metrics.voltage = parseFloat(res.value);
+          else if (res.key === 'current') state.metrics.current = parseFloat(res.value);
+          else if (res.key === 'power') state.metrics.power = parseFloat(res.value);
+          else if (res.key === 'energy') {
+            state.metrics.energy = parseFloat(res.value);
+          }
+        }
+      });
+
+      if (anySuccess) {
+        state.metrics.frequency = 50.0; // Grid frequency is always standard 50 Hz as requested
+        
+        // Calculate Power Factor: Power / (Voltage * Current)
+        const apparentPower = state.metrics.voltage * state.metrics.current;
+        if (state.metrics.power > 0 && apparentPower > 0.1) {
+          state.metrics.powerFactor = Math.min(1.0, Math.max(0.0, state.metrics.power / apparentPower));
+        } else {
+          state.metrics.powerFactor = 0.0;
+        }
+
+        // Handle energy calculation if separate energy resource was unreachable or zero
+        const energyRes = results.find(r => r.key === 'energy');
+        if (!energyRes || energyRes.value === null || isNaN(energyRes.value) || parseFloat(energyRes.value) <= 0) {
+          let savedEnergy = parseFloat(localStorage.getItem('smart_meter_cumulative_energy'));
+          if (isNaN(savedEnergy)) savedEnergy = 12.85;
+          const deltaEnergy = (state.metrics.power / 1000.0) * (2.0 / 3600.0);
+          const rawEnergy = savedEnergy + deltaEnergy;
+          localStorage.setItem('smart_meter_cumulative_energy', rawEnergy.toString());
+          state.metrics.energy = Math.max(0.0, rawEnergy - state.energyOffset);
+        }
+        
+        state.isDeviceOnline = true;
+        updateStatusIndicator(true, "Device Online");
+        return;
+      } else {
+        if (isDemo) {
+          state.isDeviceOnline = true;
+          updateStatusIndicator(true, "Demo Mode (IoT links unreachable)");
+          generateSimulatedData();
+        } else {
+          state.isDeviceOnline = false;
+          updateStatusIndicator(false, "Device Offline");
+          setMetricsToZero();
+        }
+      }
+    } catch (e) {
+      console.warn("Parallel fetch failed:", e);
+      if (isDemo) {
+        state.isDeviceOnline = true;
+        updateStatusIndicator(true, "Demo Mode (Parallel fetch error)");
+        generateSimulatedData();
+      } else {
+        state.isDeviceOnline = false;
+        updateStatusIndicator(false, "Device Offline");
+        setMetricsToZero();
+      }
+    }
+    return;
+  }
+
+  // Fallback to original single resource payload fetch
+  if (!token) {
     if (isDemo) {
       state.isDeviceOnline = true;
       updateStatusIndicator(true, "Demo Mode: Connected");
@@ -659,9 +987,9 @@ async function fetchThingerData() {
       const data = await response.json();
       
       let payload = data;
-      if (data && data.out) {
+      if (data && data.out !== undefined) {
         payload = data.out;
-      } else if (data && data.in) {
+      } else if (data && data.in !== undefined) {
         payload = data.in;
       }
       
@@ -682,8 +1010,15 @@ async function fetchThingerData() {
           state.metrics.energy = Math.max(0.0, rawEnergy - state.energyOffset);
         }
         
-        state.metrics.frequency = parseFloat(mapped.frequency || 50.0);
-        state.metrics.powerFactor = parseFloat(mapped.powerFactor || 0.9);
+        state.metrics.frequency = 50.0; // Standard 50 Hz
+        
+        // Calculate Power Factor: Power / (Voltage * Current)
+        const apparentPower = state.metrics.voltage * state.metrics.current;
+        if (state.metrics.power > 0 && apparentPower > 0.1) {
+          state.metrics.powerFactor = Math.min(1.0, Math.max(0.0, state.metrics.power / apparentPower));
+        } else {
+          state.metrics.powerFactor = 0.0;
+        }
         
         state.isDeviceOnline = true;
         updateStatusIndicator(true, "Device Online");
@@ -816,9 +1151,8 @@ function generateSimulatedData() {
   
   state.metrics.energy = Math.max(0.0, rawEnergy - state.energyOffset);
   
-  // 5. Grid Frequency (Normally stable around 50.0Hz, fluctuates +/- 0.04Hz)
-  const freqFluctuation = Math.sin(Date.now() / 20000) * 0.03 + (Math.random() * 0.01 - 0.005);
-  state.metrics.frequency = parseFloat((50.00 + freqFluctuation).toFixed(2));
+  // 5. Grid Frequency (50 Hz is standard so display it as it is)
+  state.metrics.frequency = 50.00;
 }
 
 /**
@@ -881,12 +1215,12 @@ function processMeasurementUpdates() {
  * Renders numerical telemetry parameters to their respective DOM coordinates
  */
 function renderMetricsToDOM() {
-  elements.voltageVal.innerText = `${state.metrics.voltage.toFixed(1)} V`;
-  elements.currentVal.innerText = `${state.metrics.current.toFixed(2)} A`;
-  elements.powerVal.innerText = `${state.metrics.power.toFixed(1)} W`;
-  elements.energyVal.innerText = `${state.metrics.energy.toFixed(2)} kWh`;
-  elements.frequencyVal.innerText = `${state.metrics.frequency.toFixed(2)} Hz`;
-  elements.pfVal.innerText = `${state.metrics.powerFactor.toFixed(2)}`;
+  if (elements.voltageVal) elements.voltageVal.innerText = `${state.metrics.voltage.toFixed(1)} V`;
+  if (elements.currentVal) elements.currentVal.innerText = `${state.metrics.current.toFixed(2)} A`;
+  if (elements.powerVal) elements.powerVal.innerText = `${state.metrics.power.toFixed(1)} W`;
+  if (elements.energyVal) elements.energyVal.innerText = `${state.metrics.energy.toFixed(2)} kWh`;
+  if (elements.frequencyVal) elements.frequencyVal.innerText = `${state.metrics.frequency.toFixed(2)} Hz`;
+  if (elements.pfVal) elements.pfVal.innerText = `${state.metrics.powerFactor.toFixed(2)}`;
   
   // Voltage Stability Indicator
   if (!state.isDeviceOnline) {
@@ -926,26 +1260,30 @@ function renderMetricsToDOM() {
   
   // Energy carbon calculation (Standard AC Grid constant: ~0.85 kg CO2 per kWh)
   const co2 = state.metrics.energy * 0.85;
-  elements.carbonFootprint.innerText = `Est CO₂: ${co2.toFixed(2)} kg`;
+  if (elements.carbonFootprint) elements.carbonFootprint.innerText = `Est CO₂: ${co2.toFixed(2)} kg`;
   
   // Frequency Status
-  if (!state.isDeviceOnline) {
-    elements.frequencyStability.innerText = "Status: Grid Sync Lost";
-  } else if (Math.abs(state.metrics.frequency - 50) > 0.5) {
-    elements.frequencyStability.innerHTML = `<span style="color: var(--danger);">Frequency Fluctuations</span>`;
-  } else {
-    elements.frequencyStability.innerHTML = `<span style="color: var(--text-muted);">Synchronized (50 Hz)</span>`;
+  if (elements.frequencyStability) {
+    if (!state.isDeviceOnline) {
+      elements.frequencyStability.innerText = "Status: Grid Sync Lost";
+    } else if (Math.abs(state.metrics.frequency - 50) > 0.5) {
+      elements.frequencyStability.innerHTML = `<span style="color: var(--danger);">Frequency Fluctuations</span>`;
+    } else {
+      elements.frequencyStability.innerHTML = `<span style="color: var(--text-muted);">Synchronized (50 Hz)</span>`;
+    }
   }
   
   // Power Factor Phase Indicators
-  if (!state.isDeviceOnline) {
-    elements.pfPhase.innerText = "Load Phase: N/A";
-  } else if (state.metrics.powerFactor > 0.95) {
-    elements.pfPhase.innerText = "Phase: Highly Resistive";
-  } else if (state.metrics.powerFactor < 0.85) {
-    elements.pfPhase.innerHTML = `<span style="color: var(--warning); font-weight: 500;">Phase: Highly Inductive</span>`;
-  } else {
-    elements.pfPhase.innerText = "Phase: Balanced Inductive";
+  if (elements.pfPhase) {
+    if (!state.isDeviceOnline) {
+      elements.pfPhase.innerText = "Load Phase: N/A";
+    } else if (state.metrics.powerFactor > 0.95) {
+      elements.pfPhase.innerText = "Phase: Highly Resistive";
+    } else if (state.metrics.powerFactor < 0.85) {
+      elements.pfPhase.innerHTML = `<span style="color: var(--warning); font-weight: 500;">Phase: Highly Inductive</span>`;
+    } else {
+      elements.pfPhase.innerText = "Phase: Balanced Inductive";
+    }
   }
   
   // Refresh Lucide Icons inside dynamic text elements
@@ -1138,6 +1476,9 @@ function triggerAlarmCheck(key, isTriggered, message) {
     
     // UI Toast Notification popup
     showToast(getAlarmHeading(key), message, "danger");
+
+    // Automatically dispatch condition email alert if enabled
+    dispatchConditionEmailAlert(key, message);
   } 
   // If state resets below safe limits
   else if (!isTriggered && state.alertTriggered[key]) {
@@ -1548,6 +1889,36 @@ function updateStatusIndicator(online, text) {
   } else {
     elements.connectionStatus.className = "status-indicator status-offline";
   }
+
+  // Live Connectivity Diagnostic updates
+  const dConn = document.getElementById('diag-active-conn');
+  const dUser = document.getElementById('diag-username');
+  const dDev = document.getElementById('diag-device-id');
+  const dRes = document.getElementById('diag-resource');
+  const dUrl = document.getElementById('diag-api-url');
+
+  if (dConn) {
+    if (online) {
+      dConn.innerText = text.includes("Demo") ? "Demo Fallback" : "Online & Synced";
+      dConn.style.color = text.includes("Demo") ? "var(--warning)" : "var(--success)";
+    } else {
+      dConn.innerText = "Disconnected";
+      dConn.style.color = "var(--danger)";
+    }
+  }
+
+  if (dUser) dUser.innerText = state.config.thingerUsername || "None (Demo Mode)";
+  if (dDev) dDev.innerText = state.config.thingerDeviceId || "None";
+  if (dRes) dRes.innerText = state.config.thingerResourceName || "metrics";
+
+  if (dUrl) {
+    const maskedToken = state.config.thingerAccessToken ? "••••••••" : "";
+    if (state.config.thingerUsername && state.config.thingerDeviceId) {
+      dUrl.innerText = `https://api.thinger.io/v2/users/${state.config.thingerUsername}/devices/${state.config.thingerDeviceId}/${state.config.thingerResourceName || 'metrics'}${maskedToken ? '?authorization=' + maskedToken : ''}`;
+    } else {
+      dUrl.innerText = "N/A (Demo mode does not query Thinger.io server)";
+    }
+  }
 }
 
 /**
@@ -1766,3 +2137,512 @@ function clearSession() {
   state.loggedInUser = '';
   checkActiveSession();
 }
+
+/* ==========================================================================
+   ML Energy Budget & Appliance Runtime Planner Module
+   ========================================================================== */
+
+let mlAppliancesList = [
+  { name: "Fan", watts: 75, priority: 8 },
+  { name: "TV", watts: 120, priority: 5 },
+  { name: "AC", watts: 1500, priority: 10 }
+];
+
+function initMlEnergyPlanner() {
+  const container = document.getElementById('ml-appliance-rows-container');
+  const budgetInput = document.getElementById('ml-budget-input');
+  const addBtn = document.getElementById('ml-add-appliance-btn');
+  const calculateBtn = document.getElementById('ml-calculate-btn');
+  const refineBtn = document.getElementById('ml-refine-btn');
+
+  if (!container || !budgetInput) return;
+
+  // Update daily budget subtext on budget input change
+  budgetInput.addEventListener('input', () => {
+    const b = parseFloat(budgetInput.value) || 0;
+    const dailyB = (b / 30).toFixed(2);
+    const label = document.getElementById('ml-daily-budget-calc');
+    if (label) label.innerText = `₹${dailyB} / day`;
+  });
+
+  renderMlApplianceRows();
+
+  if (addBtn) {
+    addBtn.addEventListener('click', () => {
+      mlAppliancesList = getMlAppliancesFromRows();
+      mlAppliancesList.push({ name: '', watts: 100, priority: 1 });
+      renderMlApplianceRows();
+    });
+  }
+
+  if (calculateBtn) {
+    calculateBtn.addEventListener('click', () => executeMlPlanCalculation(0));
+  }
+
+  if (refineBtn) {
+    refineBtn.addEventListener('click', () => executeMlPlanCalculation(1));
+  }
+
+  // Auto-run initial calculation on render
+  setTimeout(() => {
+    executeMlPlanCalculation(0);
+  }, 300);
+}
+
+function renderMlApplianceRows() {
+  const container = document.getElementById('ml-appliance-rows-container');
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  mlAppliancesList.forEach((app, idx) => {
+    const row = document.createElement('div');
+    row.className = 'ml-appliance-row';
+    row.style.cssText = 'display: grid; grid-template-columns: 1fr 90px 80px 32px; gap: 0.4rem; align-items: center;';
+
+    row.innerHTML = `
+      <input type="text" class="form-control ml-app-name" value="${app.name}" placeholder="Appliance (e.g. Fridge)" style="padding: 0.4rem 0.5rem; font-size: 0.8rem;" />
+      <input type="number" class="form-control ml-app-watts" value="${app.watts}" placeholder="Watts" min="0" style="padding: 0.4rem 0.5rem; font-size: 0.8rem;" />
+      <input type="number" class="form-control ml-app-priority" value="${app.priority}" placeholder="Prio" min="1" max="10" style="padding: 0.4rem 0.5rem; font-size: 0.8rem;" />
+      <button type="button" class="ml-remove-row-btn" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: var(--danger); border-radius: 4px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: var(--transition);" title="Delete Appliance">
+        <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+      </button>
+    `;
+
+    // Delete row event
+    const removeBtn = row.querySelector('.ml-remove-row-btn');
+    removeBtn.addEventListener('click', () => {
+      mlAppliancesList = getMlAppliancesFromRows();
+      mlAppliancesList.splice(idx, 1);
+      if (mlAppliancesList.length === 0) {
+        mlAppliancesList = [{ name: '', watts: 0, priority: 1 }];
+      }
+      renderMlApplianceRows();
+    });
+
+    container.appendChild(row);
+  });
+
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function getMlAppliancesFromRows() {
+  const container = document.getElementById('ml-appliance-rows-container');
+  if (!container) return mlAppliancesList;
+
+  const rows = [...container.querySelectorAll('.ml-appliance-row')];
+  return rows.map(r => {
+    const name = r.querySelector('.ml-app-name')?.value || '';
+    const watts = parseFloat(r.querySelector('.ml-app-watts')?.value || '0') || 0;
+    const priority = parseInt(r.querySelector('.ml-app-priority')?.value || '1', 10) || 1;
+    return { name, watts, priority };
+  });
+}
+
+async function executeMlPlanCalculation(refineLevel = 0) {
+  const budgetInput = document.getElementById('ml-budget-input');
+  const monthlyBudget = parseFloat(budgetInput?.value || '0') || 0;
+  const currentAppliances = getMlAppliancesFromRows().filter(a => a.name.trim().length > 0);
+
+  if (monthlyBudget <= 0) {
+    showToast("Invalid Budget", "Please enter a monthly budget greater than ₹0.", "warning");
+    return;
+  }
+
+  if (currentAppliances.length === 0) {
+    showToast("No Appliances", "Please add at least one appliance name and power rating.", "warning");
+    return;
+  }
+
+  const endpoint = refineLevel === 1 ? '/api/refine' : '/api/calculate';
+  const payload = {
+    budget: monthlyBudget,
+    appliances: currentAppliances,
+    refine_level: refineLevel
+  };
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      throw new Error(`Server returned status ${response.status}`);
+    }
+
+    const data = await response.json();
+    renderMlPlanResults(data, refineLevel);
+    showToast(
+      refineLevel === 1 ? "Plan Refined" : "Plan Calculated",
+      "Energy budget runtime optimization complete.",
+      "success"
+    );
+  } catch (err) {
+    console.warn("API request failed, executing client-side fallback calculation:", err);
+    const fallbackData = calculateEnergyPlanClient(monthlyBudget, currentAppliances, refineLevel);
+    renderMlPlanResults(fallbackData, refineLevel);
+    showToast("Plan Calculated", "Calculated energy budget plan locally.", "info");
+  }
+}
+
+function renderMlPlanResults(data, refineLevel) {
+  lastMlCalculationResult = data;
+  const summaryBox = document.getElementById('ml-summary-box');
+  const dailyBudgetKpi = document.getElementById('ml-kpi-daily-budget');
+  const dailyProjectedKpi = document.getElementById('ml-kpi-daily-projected');
+  const monthlyProjectedKpi = document.getElementById('ml-kpi-monthly-projected');
+  const tableBody = document.getElementById('ml-result-table-body');
+  const rawJsonBlock = document.getElementById('ml-raw-json-block');
+  const statusBadge = document.getElementById('ml-plan-status-badge');
+
+  if (summaryBox) {
+    summaryBox.innerHTML = `<strong>Optimization Result:</strong> ${data.summary || 'Plan generated successfully.'}`;
+  }
+
+  const dailyBudgetVal = ((data.total_budget || 0) / 30).toFixed(2);
+  const dailyProjectedVal = (data.total_projected_cost || 0).toFixed(2);
+  const monthlyProjectedVal = ((data.total_projected_cost || 0) * 30).toFixed(2);
+
+  if (dailyBudgetKpi) dailyBudgetKpi.innerText = `₹${dailyBudgetVal}`;
+  if (dailyProjectedKpi) dailyProjectedKpi.innerText = `₹${dailyProjectedVal}`;
+  if (monthlyProjectedKpi) monthlyProjectedKpi.innerText = `₹${monthlyProjectedVal}`;
+
+  if (statusBadge) {
+    statusBadge.innerText = refineLevel === 1 ? 'Refined Plan' : 'Standard Plan';
+    statusBadge.style.background = refineLevel === 1 ? 'rgba(59, 130, 246, 0.15)' : 'rgba(16, 185, 129, 0.15)';
+    statusBadge.style.color = refineLevel === 1 ? '#3b82f6' : 'var(--success)';
+  }
+
+  if (tableBody) {
+    tableBody.innerHTML = '';
+    const apps = data.appliances || [];
+    if (apps.length === 0) {
+      tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 1rem;">No valid appliances returned.</td></tr>`;
+    } else {
+      apps.forEach(a => {
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid var(--border-color)';
+        tr.innerHTML = `
+          <td style="padding: 0.5rem; font-weight: 500; color: var(--text-primary);">${a.name}</td>
+          <td style="padding: 0.5rem; text-align: center;" class="mono">${a.watts} W</td>
+          <td style="padding: 0.5rem; text-align: center;" class="mono">
+            <span style="background: rgba(16, 185, 129, 0.1); color: var(--success); padding: 2px 8px; border-radius: 12px; font-weight: 600;">
+              ${a.suggested_daily_hours} hrs/day
+            </span>
+          </td>
+          <td style="padding: 0.5rem; text-align: right; font-weight: 600; color: var(--text-primary);" class="mono">₹${(a.estimated_cost_per_day || 0).toFixed(2)}</td>
+        `;
+        tableBody.appendChild(tr);
+      });
+    }
+  }
+
+  if (rawJsonBlock) {
+    rawJsonBlock.textContent = JSON.stringify(data, null, 2);
+  }
+}
+
+// Client-side fallback algorithm strictly implementing model requirements
+function calculateEnergyPlanClient(monthlyBudget, appliances, refineLevel = 0) {
+  const totalBudget = parseFloat(monthlyBudget) || 0;
+  const dailyBudget = totalBudget / 30.0;
+
+  const normApps = appliances
+    .map(a => ({
+      name: String(a.name || 'Unknown'),
+      watts: parseFloat(a.watts) || 0,
+      priority: parseInt(a.priority, 10) || 1
+    }))
+    .filter(a => a.name.trim().length > 0);
+
+  normApps.sort((a, b) => b.priority - a.priority);
+
+  const allowedDailyCost = dailyBudget;
+  const weights = normApps.map(a => Math.max(a.priority, 1));
+  const weightSum = weights.reduce((s, w) => s + w, 0) || 1;
+
+  const maxHours = 1000.0;
+  const proposedHours = weights.map(w => maxHours * (w / weightSum));
+
+  const costPerHour = normApps.map(a => (a.watts / 1000.0) * 8.0);
+  const totalCostPerDay = proposedHours.reduce((s, h, i) => s + h * costPerHour[i], 0);
+
+  let scale = 1.0;
+  if (totalCostPerDay > 0 && totalCostPerDay > allowedDailyCost) {
+    scale = allowedDailyCost / totalCostPerDay;
+  }
+
+  const adjustedHours = proposedHours.map(h => Math.max(0.0, h * scale));
+  const costFromHours = (hrs) => hrs.reduce((s, h, i) => s + h * costPerHour[i], 0);
+
+  let adjustedHoursInt = adjustedHours.map(h => parseFloat(h.toFixed(2)));
+  let currentCost = costFromHours(adjustedHoursInt);
+
+  const reduceOrder = normApps.map((_, i) => i).reverse();
+  let idx = 0;
+  while (currentCost > allowedDailyCost + 1e-6 && idx < reduceOrder.length) {
+    const j = reduceOrder[idx];
+    const step = 0.5;
+    while (adjustedHoursInt[j] > 0 && currentCost > allowedDailyCost + 1e-6) {
+      adjustedHoursInt[j] = parseFloat(Math.max(0.0, adjustedHoursInt[j] - step).toFixed(2));
+      currentCost = costFromHours(adjustedHoursInt);
+    }
+    idx++;
+  }
+
+  const appliancesOut = normApps.map((a, i) => {
+    const hours = adjustedHoursInt[i];
+    const displayHours = parseFloat(Math.min(hours, 24.0).toFixed(2));
+    const energyKwh = (a.watts / 1000.0) * hours;
+    const estimatedCostPerDay = parseFloat((energyKwh * 8.0).toFixed(2));
+    return {
+      name: a.name,
+      watts: a.watts,
+      suggested_daily_hours: displayHours,
+      estimated_cost_per_day: estimatedCostPerDay
+    };
+  });
+
+  const totalProjectedCost = parseFloat(currentCost.toFixed(2));
+  const savingsNeeded = Math.max(0.0, totalProjectedCost - allowedDailyCost);
+
+  const summaryParts = [
+    "Allocated daily runtime hours within your budget using priority-based scaling.",
+    `Monthly budget converted to daily: ${dailyBudget.toFixed(2)} INR/day (30-day assumption).`
+  ];
+
+  if (refineLevel === 0) {
+    summaryParts.push("Refine mode: off (standard plan).");
+  } else {
+    summaryParts.push("Refine mode: on (aggressive cap factor 1.00).");
+  }
+
+  if (savingsNeeded > 0) {
+    summaryParts.push("To meet budget, lower-priority appliances were reduced first to bring total cost down.");
+  } else {
+    summaryParts.push("Plan is within budget based on the required energy/cost formula.");
+  }
+
+  return {
+    summary: summaryParts.join(" "),
+    total_budget: parseFloat(totalBudget.toFixed(2)),
+    total_projected_cost: totalProjectedCost,
+    appliances: appliancesOut
+  };
+}
+
+/* ==========================================================================
+   Email Dispatcher & Report Alert Module
+   ========================================================================== */
+
+let lastMlCalculationResult = null;
+
+function initEmailDispatcher() {
+  const form = document.getElementById('email-dispatch-form');
+  const presetSelect = document.getElementById('email-preset-select');
+  const subjectInput = document.getElementById('email-subject-input');
+  const messageInput = document.getElementById('email-message-input');
+  const recipientInput = document.getElementById('email-recipient-input');
+
+  if (!form) return;
+
+  // Load saved recipient email
+  const savedEmail = localStorage.getItem('smart_meter_alert_email');
+  if (savedEmail && recipientInput && !recipientInput.value) {
+    recipientInput.value = savedEmail;
+  }
+
+  if (recipientInput) {
+    recipientInput.addEventListener('input', () => {
+      const val = recipientInput.value.trim();
+      if (val) localStorage.setItem('smart_meter_alert_email', val);
+    });
+  }
+
+  // Check email API status
+  checkEmailServiceStatus();
+
+  // Handle Preset Selection changes
+  if (presetSelect) {
+    presetSelect.addEventListener('change', () => {
+      const selected = presetSelect.value;
+      if (selected === 'ml_plan') {
+        if (subjectInput) subjectInput.value = "⚡ ML Energy Budget Plan & Appliance Runtime Optimization";
+        if (messageInput) messageInput.value = "Attached is your automated GridPulse energy allocation plan based on your monthly budget and appliance priorities.";
+      } else if (selected === 'usage_alert') {
+        if (subjectInput) subjectInput.value = "🚨 HIGH ENERGY USAGE ALERT - GridPulse Threshold Exceeded";
+        if (messageInput) messageInput.value = "Alert: Current instantaneous power consumption has spiked above safety thresholds. Please review active appliances on your dashboard.";
+      } else if (selected === 'monthly_summary') {
+        if (subjectInput) subjectInput.value = "📊 GridPulse Smart Energy Dashboard - Monthly Executive Summary";
+        if (messageInput) messageInput.value = "Here is your monthly energy usage summary, estimated billing projections, and efficiency recommendations from GridPulse.";
+      } else if (selected === 'custom') {
+        if (subjectInput) subjectInput.value = "GridPulse Energy Update";
+        if (messageInput) messageInput.value = "";
+      }
+    });
+  }
+
+  // Handle Form Submission
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const recipient = document.getElementById('email-recipient-input')?.value?.trim();
+    const subject = subjectInput?.value?.trim() || "GridPulse Energy Update";
+    const message = messageInput?.value?.trim() || "";
+    const preset = presetSelect?.value;
+
+    if (!recipient || !recipient.includes('@')) {
+      showToast("Invalid Email", "Please enter a valid recipient email address.", "warning");
+      return;
+    }
+
+    const sendBtn = document.getElementById('email-send-btn');
+    if (sendBtn) {
+      sendBtn.disabled = true;
+      sendBtn.innerHTML = `<i data-lucide="loader-2" class="spin"></i> Sending Email...`;
+      if (window.lucide) window.lucide.createIcons();
+    }
+
+    let reportData = null;
+    if (preset === 'ml_plan' && lastMlCalculationResult) {
+      reportData = lastMlCalculationResult;
+    }
+
+    try {
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: recipient,
+          subject: subject,
+          message: message,
+          reportData: reportData
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to send email");
+      }
+
+      showToast(
+        result.mode === "SMTP" ? "Email Delivered!" : "Email Dispatched (Simulation)",
+        result.message || `Sent report to ${recipient}`,
+        "success"
+      );
+
+      // Add to recent logs list
+      addEmailLogToList({
+        to: recipient,
+        subject: subject,
+        sentAt: new Date().toLocaleTimeString(),
+        status: result.mode === "SMTP" ? "DELIVERED" : "SIMULATED"
+      });
+
+    } catch (err) {
+      console.error("Email API error:", err);
+      showToast("Email Failed", err.message || "Could not dispatch email.", "danger");
+    } finally {
+      if (sendBtn) {
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = `<i data-lucide="send"></i> Send Email Now`;
+        if (window.lucide) window.lucide.createIcons();
+      }
+    }
+  });
+}
+
+async function checkEmailServiceStatus() {
+  const badge = document.getElementById('email-server-status-badge');
+  if (!badge) return;
+
+  try {
+    const res = await fetch('/api/email-status');
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+
+    if (data.smtpConfigured) {
+      badge.style.background = 'rgba(16, 185, 129, 0.15)';
+      badge.style.color = 'var(--success)';
+      badge.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+      badge.innerHTML = `<i data-lucide="check-circle" style="width: 12px; height: 12px;"></i> SMTP Configured (${data.smtpHost})`;
+    } else {
+      badge.style.background = 'rgba(245, 158, 11, 0.15)';
+      badge.style.color = 'var(--warning)';
+      badge.style.borderColor = 'rgba(245, 158, 11, 0.3)';
+      badge.innerHTML = `<i data-lucide="alert-triangle" style="width: 12px; height: 12px;"></i> Active (Simulation Fallback Mode)`;
+    }
+  } catch (e) {
+    badge.style.background = 'rgba(59, 130, 246, 0.15)';
+    badge.style.color = 'var(--info)';
+    badge.innerHTML = `<i data-lucide="check" style="width: 12px; height: 12px;"></i> Client Dispatch Ready`;
+  }
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function addEmailLogToList(log) {
+  const container = document.getElementById('email-recent-logs-list');
+  if (!container) return;
+
+  if (container.innerText.includes('No emails dispatched')) {
+    container.innerHTML = '';
+  }
+
+  const div = document.createElement('div');
+  div.style.cssText = 'padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;';
+  div.innerHTML = `
+    <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%;">
+      <strong style="color: var(--text-primary);">${log.to}</strong> — ${log.subject}
+    </div>
+    <div style="font-size: 0.7rem;" class="mono">
+      <span style="color: ${log.status === 'DELIVERED' ? 'var(--success)' : 'var(--info)'};">[${log.status}]</span> ${log.sentAt}
+    </div>
+  `;
+  container.prepend(div);
+}
+
+/**
+ * Automatically dispatches an email alert whenever an electrical condition threshold is breached
+ */
+function dispatchConditionEmailAlert(key, message) {
+  const toggle = document.getElementById('email-auto-alerts-toggle');
+  if (toggle && !toggle.checked) return;
+
+  const recipientInput = document.getElementById('email-recipient-input');
+  const recipient = recipientInput?.value?.trim() || localStorage.getItem('smart_meter_alert_email');
+
+  if (!recipient || !recipient.includes('@')) {
+    console.log("No valid email recipient configured for automatic condition alert.");
+    return;
+  }
+
+  const heading = getAlarmHeading(key);
+  const valStr = getMeasuredValString(key);
+
+  fetch('/api/send-email', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      to: recipient,
+      subject: `🚨 [GRIDPULSE THRESHOLD ALERT] ${heading}`,
+      message: `GridPulse Smart Energy Alert Triggered:\n\nViolation: ${heading}\nMessage: ${message}\nMeasured Parameter: ${valStr}\nTimestamp: ${new Date().toLocaleString()}\n\nGridPulse Automated Grid Safety System`
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    console.log("Automated condition email alert dispatched:", data);
+    addEmailLogToList({
+      to: recipient,
+      subject: `🚨 [AUTO ALERT] ${heading}`,
+      sentAt: new Date().toLocaleTimeString(),
+      status: data.mode === "SMTP" ? "DELIVERED" : "SIMULATED"
+    });
+  })
+  .catch(err => {
+    console.warn("Failed to dispatch automated condition email alert:", err);
+  });
+}
+
