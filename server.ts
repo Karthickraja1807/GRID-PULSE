@@ -293,14 +293,36 @@ function parseThingerValue(data: any, metricKey: string): number | null {
   return (val !== null && !isNaN(val)) ? val : null;
 }
 
+function cleanNumber(val: any, defaultVal: number): number {
+  if (val === undefined || val === null) return defaultVal;
+  if (typeof val === "number") return isNaN(val) ? defaultVal : val;
+  const parsed = parseFloat(String(val));
+  return isNaN(parsed) ? defaultVal : parsed;
+}
+
 function parseThingerPayload(payload: any) {
   if (!payload) return null;
   if (typeof payload !== "object") return null;
 
   const findValue = (keys: string[]) => {
+    // 1. Try exact match first (case-insensitive)
     for (const key of Object.keys(payload)) {
       const lowerKey = key.toLowerCase();
-      if (keys.some((k) => lowerKey === k || lowerKey.includes(k))) {
+      if (keys.some((k) => lowerKey === k)) {
+        return payload[key];
+      }
+    }
+    // 2. Try partial match only for keys that are not single-character abbreviations
+    for (const key of Object.keys(payload)) {
+      const lowerKey = key.toLowerCase();
+      if (keys.some((k) => k.length >= 3 && lowerKey.includes(k))) {
+        return payload[key];
+      }
+    }
+    // 3. Try exact match for single-character abbreviations
+    for (const key of Object.keys(payload)) {
+      const lowerKey = key.toLowerCase();
+      if (keys.some((k) => k.length === 1 && lowerKey === k)) {
         return payload[key];
       }
     }
@@ -313,8 +335,9 @@ function parseThingerPayload(payload: any) {
   const energy = findValue(["energy", "kwh", "e"]);
   const frequency = findValue(["frequency", "freq", "f", "hz"]);
   const powerFactor = findValue(["powerfactor", "power_factor", "pf"]);
+  const status = findValue(["status", "state", "grid_status"]);
 
-  return { voltage, current, power, energy, frequency, powerFactor };
+  return { voltage, current, power, energy, frequency, powerFactor, status };
 }
 
 // Secure proxy endpoint for fetching live telemetry from Thinger.io
@@ -357,6 +380,7 @@ app.get("/api/live", async (req, res) => {
     let energy = 0;
     let frequency = 50.0;
     let powerFactor = 0.0;
+    let parsed: any = null;
 
     if (useSeparate) {
       const metrics = ["voltage", "current", "power", "energy"];
@@ -364,7 +388,7 @@ app.get("/api/live", async (req, res) => {
         const metricResource = (req.headers[`x-thinger-resource-${metric}`] as string) || (req.query[`resource_${metric}`] as string) || metric;
         const metricToken = (req.headers[`x-thinger-token-${metric}`] as string) || (req.query[`token_${metric}`] as string) || token;
         
-        const mUrl = `https://api.thinger.io/v2/users/${username}/devices/${deviceId}/${metricResource}`;
+        const mUrl = `https://api.thinger.io/v2/users/${username}/devices/${deviceId}/${metricResource}?authorization=${encodeURIComponent(metricToken)}`;
         const mRes = await fetch(mUrl, {
           method: "GET",
           headers: {
@@ -387,7 +411,7 @@ app.get("/api/live", async (req, res) => {
         }
       });
     } else {
-      const url = `https://api.thinger.io/v2/users/${username}/devices/${deviceId}/${resource}`;
+      const url = `https://api.thinger.io/v2/users/${username}/devices/${deviceId}/${resource}?authorization=${encodeURIComponent(token)}`;
       const response = await fetch(url, {
         method: "GET",
         headers: {
@@ -403,13 +427,13 @@ app.get("/api/live", async (req, res) => {
       if (data && data.out !== undefined) payload = data.out;
       else if (data && data.in !== undefined) payload = data.in;
 
-      const parsed = parseThingerPayload(payload);
-      voltage = parsed?.voltage !== undefined ? parseFloat(String(parsed.voltage)) : 0;
-      current = parsed?.current !== undefined ? parseFloat(String(parsed.current)) : 0;
-      power = parsed?.power !== undefined ? parseFloat(String(parsed.power)) : 0;
-      energy = parsed?.energy !== undefined ? parseFloat(String(parsed.energy)) : 0;
-      frequency = parsed?.frequency !== undefined ? parseFloat(String(parsed.frequency)) : 50.0;
-      powerFactor = parsed?.powerFactor !== undefined ? parseFloat(String(parsed.powerFactor)) : 0.0;
+      parsed = parseThingerPayload(payload);
+      voltage = cleanNumber(parsed?.voltage, 0);
+      current = cleanNumber(parsed?.current, 0);
+      power = cleanNumber(parsed?.power, 0);
+      energy = cleanNumber(parsed?.energy, 0);
+      frequency = cleanNumber(parsed?.frequency, 50.0);
+      powerFactor = cleanNumber(parsed?.powerFactor, 0.0);
     }
 
     frequency = frequency || 50.0;
@@ -423,10 +447,19 @@ app.get("/api/live", async (req, res) => {
     }
 
     let status = "Active";
-    if (voltage < 80) {
+    const devStatus = parsed?.status ? String(parsed.status).toUpperCase() : "";
+    if (devStatus === "POWER_FAILURE" || voltage < 80) {
       status = "Power Failure";
-    } else if (power < 20) {
+    } else if (devStatus === "STANDBY" || power < 20) {
       status = "Standby";
+    } else if (devStatus === "ACTIVE") {
+      status = "Active";
+    } else {
+      if (voltage < 80) {
+        status = "Power Failure";
+      } else if (power < 20) {
+        status = "Standby";
+      }
     }
 
     res.json({
@@ -569,7 +602,7 @@ app.post("/api/send-email", async (req, res) => {
 
       return res.json({
         success: true,
-        message: `Email dispatched to ${to.trim()} (Simulation Mode). To enable live delivery to inbox, configure SMTP_USER & SMTP_PASS in Vercel environment variables.`,
+        message: `Email dispatched to ${to.trim()} (Simulation Mode). To enable live delivery to inbox, configure SMTP_USER & SMTP_PASS in your Google AI Studio Settings / Secrets panel.`,
         mode: "SIMULATION",
         smtpConfigured: false,
         recipient: to.trim(),
@@ -606,8 +639,15 @@ async function startServer() {
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://0.0.0.0:${PORT}`);
+    console.log(`Server running on port ${PORT}`);
+    console.log(`- Local:   http://localhost:${PORT}`);
+    console.log(`- Network: http://127.0.0.1:${PORT}`);
   });
 }
 
-startServer();
+// Only start the server when running outside of Vercel serverless environment
+if (!process.env.VERCEL) {
+  startServer();
+}
+
+export default app;

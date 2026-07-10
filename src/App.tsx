@@ -23,10 +23,10 @@ const DEFAULT_CONFIG: DashboardConfig = {
   maxPower: 3000,
   maxEnergy: 50,
   tariff: 7.50,
-  thingerUsername: '',
-  thingerDeviceId: '',
+  thingerUsername: 'KADHIR',
+  thingerDeviceId: '123',
   thingerResourceName: 'metrics',
-  thingerAccessToken: '',
+  thingerAccessToken: '-c0vw7#nzINhOI3G',
   useSeparateMetrics: false,
   metricsConfig: {
     voltage: { resource: 'voltage', token: '' },
@@ -34,7 +34,7 @@ const DEFAULT_CONFIG: DashboardConfig = {
     power: { resource: 'power', token: '' },
     energy: { resource: 'energy', token: '' },
   },
-  thingerDemoMode: true,
+  thingerDemoMode: false,
 };
 
 export default function App() {

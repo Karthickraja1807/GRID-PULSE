@@ -15,12 +15,12 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, savedConfig }) => 
   const [password, setPassword] = useState('admin123');
 
   // Thinger.io form state
-  const [thingerUsername, setThingerUsername] = useState(savedConfig.thingerUsername || '');
-  const [thingerDeviceId, setThingerDeviceId] = useState(savedConfig.thingerDeviceId || '');
+  const [thingerUsername, setThingerUsername] = useState(savedConfig.thingerUsername || 'KADHIR');
+  const [thingerDeviceId, setThingerDeviceId] = useState(savedConfig.thingerDeviceId || '123');
   const [thingerResourceName, setThingerResourceName] = useState(savedConfig.thingerResourceName || 'metrics');
-  const [thingerAccessToken, setThingerAccessToken] = useState(savedConfig.thingerAccessToken || '');
+  const [thingerAccessToken, setThingerAccessToken] = useState(savedConfig.thingerAccessToken || '-c0vw7#nzINhOI3G');
   const [useSeparateMetrics, setUseSeparateMetrics] = useState(savedConfig.useSeparateMetrics || false);
-  const [thingerDemoMode, setThingerDemoMode] = useState(savedConfig.thingerDemoMode !== false);
+  const [thingerDemoMode, setThingerDemoMode] = useState(savedConfig.thingerDemoMode !== undefined ? savedConfig.thingerDemoMode : false);
 
   // Separate metrics configuration state
   const [vResource, setVResource] = useState(savedConfig.metricsConfig?.voltage?.resource || 'voltage');
@@ -242,71 +242,6 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, savedConfig }) => 
                     required
                     style={{ width: '100%', padding: '0.5rem 0.5rem 0.5rem 2.5rem', boxSizing: 'border-box' }}
                   />
-                </div>
-              </div>
-            )}
-
-            {/* Separate readings toggle */}
-            <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0.75rem 0' }}>
-              <input
-                type="checkbox"
-                id="login-thinger-separate-toggle"
-                checked={useSeparateMetrics}
-                onChange={(e) => setUseSeparateMetrics(e.target.checked)}
-                style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-              />
-              <label htmlFor="login-thinger-separate-toggle" style={{ margin: 0, cursor: 'pointer', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                Advanced: Separate Tokens / Resources for Sensors
-              </label>
-            </div>
-
-            {/* Collapsible Separate Fields */}
-            {useSeparateMetrics && (
-              <div id="login-thinger-separate-container" style={{ background: 'rgba(255, 255, 255, 0.01)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', padding: '0.75rem', marginTop: '0.5rem', marginBottom: '1rem' }}>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '0 0 0.75rem 0', lineHeight: 1.3 }}>Specify Thinger.io parameters for each sensor metric (ZMPT101B Voltage, ACS712 Current, etc.):</p>
-                
-                {/* Voltage */}
-                <div style={{ marginBottom: '0.75rem' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary)', display: 'block', marginBottom: '0.25rem' }}>ZMPT101B Voltage (V)</span>
-                  <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: '0.5rem' }}>
-                    <input type="text" className="form-control" value={vResource} onChange={(e) => setVResource(e.target.value)} placeholder="Resource" style={{ padding: '0.35rem 0.5rem', fontSize: '0.8rem' }} />
-                    <input type="password" className="form-control" value={vToken} onChange={(e) => setVToken(e.target.value)} placeholder="Voltage Access Token" style={{ padding: '0.35rem 0.5rem', fontSize: '0.8rem' }} />
-                  </div>
-                </div>
-
-                {/* Current */}
-                <div style={{ marginBottom: '0.75rem' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary)', display: 'block', marginBottom: '0.25rem' }}>ACS712 Current (A)</span>
-                  <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: '0.5rem' }}>
-                    <input type="text" className="form-control" value={iResource} onChange={(e) => setIResource(e.target.value)} placeholder="Resource" style={{ padding: '0.35rem 0.5rem', fontSize: '0.8rem' }} />
-                    <input type="password" className="form-control" value={iToken} onChange={(e) => setIToken(e.target.value)} placeholder="Current Access Token" style={{ padding: '0.35rem 0.5rem', fontSize: '0.8rem' }} />
-                  </div>
-                </div>
-
-                {/* Active Power */}
-                <div style={{ marginBottom: '0.75rem' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary)', display: 'block', marginBottom: '0.25rem' }}>Active Power (W)</span>
-                  <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: '0.5rem' }}>
-                    <input type="text" className="form-control" value={pResource} onChange={(e) => setPResource(e.target.value)} placeholder="Resource" style={{ padding: '0.35rem 0.5rem', fontSize: '0.8rem' }} />
-                    <input type="password" className="form-control" value={pToken} onChange={(e) => setPToken(e.target.value)} placeholder="Power Access Token" style={{ padding: '0.35rem 0.5rem', fontSize: '0.8rem' }} />
-                  </div>
-                </div>
-
-                {/* Total Energy */}
-                <div style={{ marginBottom: '0.75rem' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary)', display: 'block', marginBottom: '0.25rem' }}>Total Energy (kWh)</span>
-                  <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: '0.5rem' }}>
-                    <input type="text" className="form-control" value={eResource} onChange={(e) => setEResource(e.target.value)} placeholder="Resource" style={{ padding: '0.35rem 0.5rem', fontSize: '0.8rem' }} />
-                    <input type="password" className="form-control" value={eToken} onChange={(e) => setEToken(e.target.value)} placeholder="Energy Access Token" style={{ padding: '0.35rem 0.5rem', fontSize: '0.8rem' }} />
-                  </div>
-                </div>
-
-                {/* Power Factor */}
-                <div>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary)', display: 'block', marginBottom: '0.25rem' }}>Power Factor (PF)</span>
-                  <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '0.5rem', border: '1px dashed var(--border-color)', borderRadius: 'var(--radius-sm)', fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.3 }}>
-                    Calculated locally on-site using: <span style={{ fontFamily: 'monospace' }}>Active Power / (Voltage * Current)</span>
-                  </div>
                 </div>
               </div>
             )}

@@ -46,10 +46,10 @@ const state = {
     targetLimit: 50, // kWh monthly limit
     
     // Thinger.io Configuration Defaults
-    thingerUsername: '',
-    thingerDeviceId: '',
+    thingerUsername: 'KADHIR',
+    thingerDeviceId: '123',
     thingerResourceName: 'metrics',
-    thingerAccessToken: '',
+    thingerAccessToken: '-c0vw7#nzINhOI3G',
     thingerDemoMode: false,
     
     // Advanced: Separate Tokens / Resources configuration for each metric
@@ -442,25 +442,27 @@ function registerEventListeners() {
       submitBtn.innerHTML = `<i data-lucide="loader" class="animate-spin" style="width: 14px; height: 14px; margin-right: 0.5rem; display: inline-block; vertical-align: middle;"></i> Connecting...`;
       if (window.lucide) window.lucide.createIcons();
       
-      // Perform a validation fetch to verify credentials before logging in
-      const testUrl = useSeparate
-        ? `https://api.thinger.io/v2/users/${thingerUser}/devices/${thingerDevice}/${vRes}?authorization=${vTkn}`
-        : `https://api.thinger.io/v2/users/${thingerUser}/devices/${thingerDevice}/${thingerRes}?authorization=${thingerTkn}`;
-      
-      const validationToken = useSeparate ? vTkn : thingerTkn;
+      // Perform a validation fetch via our secure server proxy to verify credentials before logging in
+      let testUrl = `/api/live?username=${encodeURIComponent(thingerUser)}&deviceId=${encodeURIComponent(thingerDevice)}&resource=${encodeURIComponent(thingerRes)}&token=${encodeURIComponent(thingerTkn)}&isDemo=false&useSeparate=${useSeparate}`;
+      if (useSeparate) {
+        testUrl += `&resource_voltage=${encodeURIComponent(vRes)}&token_voltage=${encodeURIComponent(vTkn)}`;
+        testUrl += `&resource_current=${encodeURIComponent(iRes)}&token_current=${encodeURIComponent(iTkn)}`;
+        testUrl += `&resource_power=${encodeURIComponent(pRes)}&token_power=${encodeURIComponent(pTkn)}`;
+        testUrl += `&resource_energy=${encodeURIComponent(eRes)}&token_energy=${encodeURIComponent(eTkn)}`;
+        testUrl += `&resource_powerFactor=${encodeURIComponent(pfRes)}&token_powerFactor=${encodeURIComponent(pfTkn)}`;
+      }
       
       let validationSuccess = false;
       let errorReason = "Unknown error";
       
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s timeout
+        const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout
         
         const response = await fetch(testUrl, {
           method: 'GET',
           headers: {
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${validationToken}`
+            'Accept': 'application/json'
           },
           signal: controller.signal
         });
@@ -469,18 +471,14 @@ function registerEventListeners() {
         
         if (response.ok) {
           const data = await response.json();
-          // Verify we get a payload back
-          let payload = data;
-          if (data && data.out !== undefined) {
-            payload = data.out;
-          } else if (data && data.in !== undefined) {
-            payload = data.in;
-          }
-          
-          if (payload !== undefined) {
+          if (data.error) {
+            errorReason = `Connection failed: ${data.error}`;
+          } else if (data.isSimulated) {
+            errorReason = "Thinger.io returned simulated data. Please check your Device ID and Access Token.";
+          } else if (data.voltage !== undefined) {
             validationSuccess = true;
           } else {
-            errorReason = "Empty payload response from Thinger.io.";
+            errorReason = "Empty or malformed payload response from Thinger.io.";
           }
         } else {
           if (response.status === 401) {
@@ -493,7 +491,7 @@ function registerEventListeners() {
         }
       } catch (err) {
         console.warn("Thinger.io validation failed:", err);
-        errorReason = err.name === 'AbortError' ? "Connection timed out after 4 seconds." : "Network/CORS block or Thinger.io is offline.";
+        errorReason = err.name === 'AbortError' ? "Connection timed out after 6 seconds." : "Network/CORS block or server proxy is offline.";
       }
       
       // Restore button state
@@ -830,153 +828,26 @@ async function fetchThingerData() {
     return;
   }
 
-  // Handle advanced separate token/resource setup
-  if (state.config.useSeparateMetrics) {
-    const metricsToFetch = ['voltage', 'current', 'power', 'energy'];
-    const fetchPromises = metricsToFetch.map(async (metricKey) => {
-      const cfg = state.config.metricsConfig?.[metricKey] || { resource: metricKey, token: '' };
-      const mResource = cfg.resource || metricKey;
-      const mToken = cfg.token || token;
-      
-      if (!mResource || !mToken) return { key: metricKey, value: null };
-      
-      const mUrl = `https://api.thinger.io/v2/users/${username}/devices/${deviceId}/${mResource}?authorization=${mToken}`;
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 seconds timeout per endpoint
-        
-        const response = await fetch(mUrl, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${mToken}`
-          },
-          signal: controller.signal
-        });
-        
-        clearTimeout(timeoutId);
-        if (response.ok) {
-          const data = await response.json();
-          let payload = data;
-          if (data && data.out !== undefined) payload = data.out;
-          else if (data && data.in !== undefined) payload = data.in;
-          
-          let val = null;
-          if (typeof payload === 'object' && payload !== null) {
-            // Check for potential nested names
-            const possibleKeys = [metricKey.toLowerCase(), 'value', 'val', 'out', 'in'];
-            for (const key of Object.keys(payload)) {
-              if (possibleKeys.some(pk => key.toLowerCase().includes(pk))) {
-                val = parseFloat(payload[key]);
-                break;
-              }
-            }
-            if (val === null && Object.keys(payload).length > 0) {
-              val = parseFloat(payload[Object.keys(payload)[0]]);
-            }
-          } else {
-            val = parseFloat(payload);
-          }
-          return { key: metricKey, value: val };
-        }
-      } catch (err) {
-        console.warn(`Separate fetch failed for ${metricKey}:`, err);
-      }
-      return { key: metricKey, value: null };
-    });
-
-    try {
-      const results = await Promise.all(fetchPromises);
-      let anySuccess = false;
-      
-      results.forEach(res => {
-        if (res.value !== null && !isNaN(res.value)) {
-          anySuccess = true;
-          if (res.key === 'voltage') state.metrics.voltage = parseFloat(res.value);
-          else if (res.key === 'current') state.metrics.current = parseFloat(res.value);
-          else if (res.key === 'power') state.metrics.power = parseFloat(res.value);
-          else if (res.key === 'energy') {
-            state.metrics.energy = parseFloat(res.value);
-          }
-        }
-      });
-
-      if (anySuccess) {
-        state.metrics.frequency = 50.0; // Grid frequency is always standard 50 Hz as requested
-        
-        // Calculate Power Factor: Power / (Voltage * Current)
-        const apparentPower = state.metrics.voltage * state.metrics.current;
-        if (state.metrics.power > 0 && apparentPower > 0.1) {
-          state.metrics.powerFactor = Math.min(1.0, Math.max(0.0, state.metrics.power / apparentPower));
-        } else {
-          state.metrics.powerFactor = 0.0;
-        }
-
-        // Handle energy calculation if separate energy resource was unreachable or zero
-        const energyRes = results.find(r => r.key === 'energy');
-        if (!energyRes || energyRes.value === null || isNaN(energyRes.value) || parseFloat(energyRes.value) <= 0) {
-          let savedEnergy = parseFloat(localStorage.getItem('smart_meter_cumulative_energy'));
-          if (isNaN(savedEnergy)) savedEnergy = 12.85;
-          const deltaEnergy = (state.metrics.power / 1000.0) * (2.0 / 3600.0);
-          const rawEnergy = savedEnergy + deltaEnergy;
-          localStorage.setItem('smart_meter_cumulative_energy', rawEnergy.toString());
-          state.metrics.energy = Math.max(0.0, rawEnergy - state.energyOffset);
-        }
-        
-        state.isDeviceOnline = true;
-        updateStatusIndicator(true, "Device Online");
-        return;
-      } else {
-        if (isDemo) {
-          state.isDeviceOnline = true;
-          updateStatusIndicator(true, "Demo Mode (IoT links unreachable)");
-          generateSimulatedData();
-        } else {
-          state.isDeviceOnline = false;
-          updateStatusIndicator(false, "Device Offline");
-          setMetricsToZero();
-        }
-      }
-    } catch (e) {
-      console.warn("Parallel fetch failed:", e);
-      if (isDemo) {
-        state.isDeviceOnline = true;
-        updateStatusIndicator(true, "Demo Mode (Parallel fetch error)");
-        generateSimulatedData();
-      } else {
-        state.isDeviceOnline = false;
-        updateStatusIndicator(false, "Device Offline");
-        setMetricsToZero();
-      }
-    }
-    return;
+  // Construct query params or headers for our secure backend proxy /api/live
+  let url = `/api/live?username=${encodeURIComponent(username)}&deviceId=${encodeURIComponent(deviceId)}&resource=${encodeURIComponent(resource)}&token=${encodeURIComponent(token)}&isDemo=${isDemo}&useSeparate=${state.config.useSeparateMetrics}`;
+  
+  if (state.config.useSeparateMetrics && state.config.metricsConfig) {
+    const mc = state.config.metricsConfig;
+    if (mc.voltage) url += `&resource_voltage=${encodeURIComponent(mc.voltage.resource || 'voltage')}&token_voltage=${encodeURIComponent(mc.voltage.token || '')}`;
+    if (mc.current) url += `&resource_current=${encodeURIComponent(mc.current.resource || 'current')}&token_current=${encodeURIComponent(mc.current.token || '')}`;
+    if (mc.power) url += `&resource_power=${encodeURIComponent(mc.power.resource || 'power')}&token_power=${encodeURIComponent(mc.power.token || '')}`;
+    if (mc.energy) url += `&resource_energy=${encodeURIComponent(mc.energy.resource || 'energy')}&token_energy=${encodeURIComponent(mc.energy.token || '')}`;
+    if (mc.powerFactor) url += `&resource_powerFactor=${encodeURIComponent(mc.powerFactor.resource || 'pf')}&token_powerFactor=${encodeURIComponent(mc.powerFactor.token || '')}`;
   }
-
-  // Fallback to original single resource payload fetch
-  if (!token) {
-    if (isDemo) {
-      state.isDeviceOnline = true;
-      updateStatusIndicator(true, "Demo Mode: Connected");
-      generateSimulatedData();
-    } else {
-      state.isDeviceOnline = false;
-      updateStatusIndicator(false, "Device Offline");
-      setMetricsToZero();
-    }
-    return;
-  }
-
-  const url = `https://api.thinger.io/v2/users/${username}/devices/${deviceId}/${resource}?authorization=${token}`;
   
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4000);
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 seconds timeout
     
     const response = await fetch(url, {
       method: 'GET',
       headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Accept': 'application/json'
       },
       signal: controller.signal
     });
@@ -986,66 +857,68 @@ async function fetchThingerData() {
     if (response.ok) {
       const data = await response.json();
       
-      let payload = data;
-      if (data && data.out !== undefined) {
-        payload = data.out;
-      } else if (data && data.in !== undefined) {
-        payload = data.in;
+      // If we received an error from the proxy (even with HTTP 200)
+      if (data.error && !isDemo) {
+        state.isDeviceOnline = false;
+        updateStatusIndicator(false, `Offline: ${data.error}`);
+        setMetricsToZero();
+        return;
+      }
+
+      state.metrics.voltage = parseFloat(data.voltage || 0);
+      state.metrics.current = parseFloat(data.current || 0);
+      state.metrics.power = parseFloat(data.power || 0);
+      
+      // Keep track of cumulative energy locally if Thinger.io energy is missing or 0
+      if (data.energy !== undefined && parseFloat(data.energy) > 0) {
+        state.metrics.energy = parseFloat(data.energy);
+      } else {
+        let savedEnergy = parseFloat(localStorage.getItem('smart_meter_cumulative_energy'));
+        if (isNaN(savedEnergy)) savedEnergy = 12.85;
+        const deltaEnergy = (state.metrics.power / 1000.0) * (2.0 / 3600.0);
+        const rawEnergy = savedEnergy + deltaEnergy;
+        localStorage.setItem('smart_meter_cumulative_energy', rawEnergy.toString());
+        state.metrics.energy = Math.max(0.0, rawEnergy - state.energyOffset);
       }
       
-      const mapped = parseThingerPayload(payload);
-      if (mapped && (mapped.voltage !== undefined || mapped.current !== undefined || mapped.power !== undefined)) {
-        state.metrics.voltage = parseFloat(mapped.voltage || 0);
-        state.metrics.current = parseFloat(mapped.current || 0);
-        state.metrics.power = parseFloat(mapped.power || 0);
-        
-        if (mapped.energy !== undefined && parseFloat(mapped.energy) > 0) {
-          state.metrics.energy = parseFloat(mapped.energy);
-        } else {
-          let savedEnergy = parseFloat(localStorage.getItem('smart_meter_cumulative_energy'));
-          if (isNaN(savedEnergy)) savedEnergy = 12.85;
-          const deltaEnergy = (state.metrics.power / 1000.0) * (2.0 / 3600.0);
-          const rawEnergy = savedEnergy + deltaEnergy;
-          localStorage.setItem('smart_meter_cumulative_energy', rawEnergy.toString());
-          state.metrics.energy = Math.max(0.0, rawEnergy - state.energyOffset);
-        }
-        
-        state.metrics.frequency = 50.0; // Standard 50 Hz
-        
-        // Calculate Power Factor: Power / (Voltage * Current)
-        const apparentPower = state.metrics.voltage * state.metrics.current;
-        if (state.metrics.power > 0 && apparentPower > 0.1) {
-          state.metrics.powerFactor = Math.min(1.0, Math.max(0.0, state.metrics.power / apparentPower));
-        } else {
-          state.metrics.powerFactor = 0.0;
-        }
-        
-        state.isDeviceOnline = true;
-        updateStatusIndicator(true, "Device Online");
+      state.metrics.frequency = parseFloat(data.frequency || 50.0);
+      state.metrics.powerFactor = parseFloat(data.powerFactor || 0.0);
+      
+      state.isDeviceOnline = true;
+      
+      if (data.isSimulated) {
+        updateStatusIndicator(true, data.status ? `Demo Mode (${data.status})` : "Demo Mode: Connected");
       } else {
-        if (isDemo) {
-          state.isDeviceOnline = true;
-          updateStatusIndicator(true, "Demo Mode (Invalid API payload)");
-          generateSimulatedData();
+        let friendlyStatus = "Device Online";
+        if (data.status) {
+          state.metrics.status = data.status.toUpperCase();
+          if (state.metrics.status === "POWER_FAILURE") {
+            friendlyStatus = "Grid Offline (POWER FAILURE)";
+          } else if (state.metrics.status === "STANDBY") {
+            friendlyStatus = "Device Standby";
+          } else if (state.metrics.status === "ACTIVE") {
+            friendlyStatus = "Grid Pulse Active";
+          } else {
+            friendlyStatus = `Grid Status: ${data.status}`;
+          }
         } else {
-          state.isDeviceOnline = false;
-          updateStatusIndicator(false, "Device Offline");
-          setMetricsToZero();
+          state.metrics.status = '';
         }
+        updateStatusIndicator(true, friendlyStatus);
       }
     } else {
       if (isDemo) {
         state.isDeviceOnline = true;
-        updateStatusIndicator(true, `Demo Mode (HTTP ${response.status})`);
+        updateStatusIndicator(true, `Demo Mode (Proxy HTTP ${response.status})`);
         generateSimulatedData();
       } else {
         state.isDeviceOnline = false;
-        updateStatusIndicator(false, "Device Offline");
+        updateStatusIndicator(false, `Device Offline (HTTP ${response.status})`);
         setMetricsToZero();
       }
     }
   } catch (err) {
-    console.warn("Thinger.io fetch failed:", err);
+    console.warn("Thinger.io proxy fetch failed:", err);
     if (isDemo) {
       state.isDeviceOnline = true;
       updateStatusIndicator(true, "Demo Mode (Connection failed)");
@@ -1066,9 +939,24 @@ function parseThingerPayload(payload) {
   if (typeof payload !== 'object') return null;
   
   const findValue = (keys) => {
+    // 1. Try exact match first (case-insensitive)
     for (const key of Object.keys(payload)) {
       const lowerKey = key.toLowerCase();
-      if (keys.some(k => lowerKey === k || lowerKey.includes(k))) {
+      if (keys.some(k => lowerKey === k)) {
+        return payload[key];
+      }
+    }
+    // 2. Try partial match only for keys that are not single-character abbreviations
+    for (const key of Object.keys(payload)) {
+      const lowerKey = key.toLowerCase();
+      if (keys.some(k => k.length >= 3 && lowerKey.includes(k))) {
+        return payload[key];
+      }
+    }
+    // 3. Try exact match for single-character abbreviations
+    for (const key of Object.keys(payload)) {
+      const lowerKey = key.toLowerCase();
+      if (keys.some(k => k.length === 1 && lowerKey === k)) {
         return payload[key];
       }
     }
@@ -1081,8 +969,9 @@ function parseThingerPayload(payload) {
   const energy = findValue(['energy', 'kwh', 'e']);
   const frequency = findValue(['frequency', 'freq', 'f', 'hz']);
   const powerFactor = findValue(['powerfactor', 'power_factor', 'pf']);
+  const status = findValue(['status', 'state', 'grid_status']);
 
-  return { voltage, current, power, energy, frequency, powerFactor };
+  return { voltage, current, power, energy, frequency, powerFactor, status };
 }
 
 /**
@@ -1212,19 +1101,43 @@ function processMeasurementUpdates() {
 }
 
 /**
+ * Formats a numeric value adaptively based on its scale.
+ * If the value is extremely small, it adds precision to avoid showing 0.00.
+ */
+function formatSmartValue(value, defaultDecimals) {
+  const num = parseFloat(value);
+  if (isNaN(num)) return "0";
+  if (num === 0) return num.toFixed(defaultDecimals);
+  
+  const absVal = Math.abs(num);
+  if (absVal < 0.01) {
+    // For tiny numbers (e.g., 0.003 A or 0.0001 kWh), display with up to 5 decimals dynamically
+    // to preserve real precision on the UI.
+    const rawFixed = num.toFixed(5);
+    // Trim trailing zeros from the decimal part, but keep up to 4 or 5 decimals
+    return parseFloat(rawFixed).toString();
+  } else if (absVal < 0.1) {
+    return num.toFixed(3);
+  }
+  return num.toFixed(defaultDecimals);
+}
+
+/**
  * Renders numerical telemetry parameters to their respective DOM coordinates
  */
 function renderMetricsToDOM() {
-  if (elements.voltageVal) elements.voltageVal.innerText = `${state.metrics.voltage.toFixed(1)} V`;
-  if (elements.currentVal) elements.currentVal.innerText = `${state.metrics.current.toFixed(2)} A`;
-  if (elements.powerVal) elements.powerVal.innerText = `${state.metrics.power.toFixed(1)} W`;
-  if (elements.energyVal) elements.energyVal.innerText = `${state.metrics.energy.toFixed(2)} kWh`;
-  if (elements.frequencyVal) elements.frequencyVal.innerText = `${state.metrics.frequency.toFixed(2)} Hz`;
-  if (elements.pfVal) elements.pfVal.innerText = `${state.metrics.powerFactor.toFixed(2)}`;
+  if (elements.voltageVal) elements.voltageVal.innerText = `${formatSmartValue(state.metrics.voltage, 1)} V`;
+  if (elements.currentVal) elements.currentVal.innerText = `${formatSmartValue(state.metrics.current, 2)} A`;
+  if (elements.powerVal) elements.powerVal.innerText = `${formatSmartValue(state.metrics.power, 1)} W`;
+  if (elements.energyVal) elements.energyVal.innerText = `${formatSmartValue(state.metrics.energy, 2)} kWh`;
+  if (elements.frequencyVal) elements.frequencyVal.innerText = `${formatSmartValue(state.metrics.frequency, 2)} Hz`;
+  if (elements.pfVal) elements.pfVal.innerText = `${formatSmartValue(state.metrics.powerFactor, 2)}`;
   
   // Voltage Stability Indicator
   if (!state.isDeviceOnline) {
     elements.voltageStatus.innerHTML = `<span style="color: var(--danger);">Grid Disconnected</span>`;
+  } else if (state.metrics.status === "POWER_FAILURE" || state.metrics.voltage < 80) {
+    elements.voltageStatus.innerHTML = `<span style="color: var(--danger); font-weight: 600;"><i data-lucide="alert-triangle" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle;"></i> POWER FAILURE</span>`;
   } else if (state.metrics.voltage > state.config.thresholds.overVoltage) {
     elements.voltageStatus.innerHTML = `<span style="color: var(--danger);"><i data-lucide="alert-triangle" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle;"></i> Over-Voltage</span>`;
   } else if (state.metrics.voltage < state.config.thresholds.underVoltage) {
@@ -1248,6 +1161,12 @@ function renderMetricsToDOM() {
   // Active Power Load Assessment
   if (!state.isDeviceOnline) {
     elements.powerLoad.innerText = "Load Status: Offline";
+  } else if (state.metrics.status === "POWER_FAILURE") {
+    elements.powerLoad.innerHTML = `<span style="color: var(--danger); font-weight: 600;">No Load (Grid Offline)</span>`;
+  } else if (state.metrics.status === "STANDBY") {
+    elements.powerLoad.innerHTML = `<span style="color: var(--text-muted);">Standby Mode</span>`;
+  } else if (state.metrics.status === "ACTIVE") {
+    elements.powerLoad.innerHTML = `<span style="color: var(--success); font-weight: 500;">Grid Pulse Active</span>`;
   } else if (state.metrics.power > 2000) {
     elements.powerLoad.innerHTML = `<span style="color: var(--danger); font-weight: 600;">Critical Load (Heavy)</span>`;
   } else if (state.metrics.power > 800) {
@@ -1408,7 +1327,7 @@ function updateBillCalculations() {
   
   // Progress Bar for Budget/Target Limit
   const limitKWh = state.config.targetLimit;
-  elements.budgetTargetLabel.innerText = `${state.metrics.energy.toFixed(2)} / ${limitKWh} kWh`;
+  elements.budgetTargetLabel.innerText = `${formatSmartValue(state.metrics.energy, 2)} / ${limitKWh} kWh`;
   
   const budgetPct = Math.min(100, (state.metrics.energy / limitKWh) * 100);
   elements.budgetProgressIndicator.style.width = `${budgetPct}%`;

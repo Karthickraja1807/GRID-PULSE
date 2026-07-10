@@ -76,7 +76,7 @@
             <label for="login-thinger-username">Thinger.io Username <span class="required" style="color: var(--danger);">*</span></label>
             <div class="input-icon-wrapper">
               <i data-lucide="user" class="input-icon"></i>
-              <input type="text" id="login-thinger-username" class="form-control" placeholder="Thinger.io account username" required />
+              <input type="text" id="login-thinger-username" class="form-control" placeholder="Thinger.io account username" value="KADHIR" required />
             </div>
           </div>
 
@@ -84,7 +84,7 @@
             <label for="login-thinger-device-id">Device ID <span class="required" style="color: var(--danger);">*</span></label>
             <div class="input-icon-wrapper">
               <i data-lucide="cpu" class="input-icon"></i>
-              <input type="text" id="login-thinger-device-id" class="form-control" placeholder="e.g., esp32_energy" required />
+              <input type="text" id="login-thinger-device-id" class="form-control" placeholder="e.g., esp32_energy" value="123" required />
             </div>
           </div>
 
@@ -100,70 +100,13 @@
             <label for="login-thinger-token">Device Access Token <span class="required" style="color: var(--danger);">*</span></label>
             <div class="input-icon-wrapper">
               <i data-lucide="key" class="input-icon"></i>
-              <input type="password" id="login-thinger-token" class="form-control" placeholder="Paste your bearer token here" required />
-            </div>
-          </div>
-
-          <!-- Separate readings toggle -->
-          <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin: 0.75rem 0 0.5rem 0;">
-            <input type="checkbox" id="login-thinger-separate-toggle" style="width: 16px; height: 16px; cursor: pointer;" />
-            <label for="login-thinger-separate-toggle" style="margin-bottom: 0; cursor: pointer; font-size: 0.82rem; color: var(--text-secondary);">
-              Advanced: Separate Tokens / Resources for Sensors
-            </label>
-          </div>
-
-          <!-- Collapsible Separate Fields for Login -->
-          <div id="login-thinger-separate-container" style="display: none; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.75rem; margin-top: 0.5rem; margin-bottom: 1rem;">
-            <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem; line-height: 1.3;">Specify the Thinger.io resource name and individual access token for each sensor metric (ZMPT101B Voltage, ACS712 Current, etc.):</p>
-            
-            <!-- Voltage -->
-            <div style="margin-bottom: 0.75rem;">
-              <span style="font-size: 0.75rem; font-weight: 600; color: var(--primary); display: block; margin-bottom: 0.25rem;">ZMPT101B Voltage (V)</span>
-              <div style="display: grid; grid-template-columns: 100px 1fr; gap: 0.5rem;">
-                <input type="text" id="login-v-resource" class="form-control" placeholder="Resource" value="voltage" style="padding: 0.35rem 0.5rem; font-size: 0.8rem;" />
-                <input type="password" id="login-v-token" class="form-control" placeholder="Voltage Access Token" style="padding: 0.35rem 0.5rem; font-size: 0.8rem;" />
-              </div>
-            </div>
-
-            <!-- Current -->
-            <div style="margin-bottom: 0.75rem;">
-              <span style="font-size: 0.75rem; font-weight: 600; color: var(--primary); display: block; margin-bottom: 0.25rem;">ACS712 Current (A)</span>
-              <div style="display: grid; grid-template-columns: 100px 1fr; gap: 0.5rem;">
-                <input type="text" id="login-i-resource" class="form-control" placeholder="Resource" value="current" style="padding: 0.35rem 0.5rem; font-size: 0.8rem;" />
-                <input type="password" id="login-i-token" class="form-control" placeholder="Current Access Token" style="padding: 0.35rem 0.5rem; font-size: 0.8rem;" />
-              </div>
-            </div>
-
-            <!-- Active Power -->
-            <div style="margin-bottom: 0.75rem;">
-              <span style="font-size: 0.75rem; font-weight: 600; color: var(--primary); display: block; margin-bottom: 0.25rem;">Active Power (W)</span>
-              <div style="display: grid; grid-template-columns: 100px 1fr; gap: 0.5rem;">
-                <input type="text" id="login-p-resource" class="form-control" placeholder="Resource" value="power" style="padding: 0.35rem 0.5rem; font-size: 0.8rem;" />
-                <input type="password" id="login-p-token" class="form-control" placeholder="Power Access Token" style="padding: 0.35rem 0.5rem; font-size: 0.8rem;" />
-              </div>
-            </div>
-
-            <!-- Total Energy -->
-            <div style="margin-bottom: 0.75rem;">
-              <span style="font-size: 0.75rem; font-weight: 600; color: var(--primary); display: block; margin-bottom: 0.25rem;">Total Energy (kWh)</span>
-              <div style="display: grid; grid-template-columns: 100px 1fr; gap: 0.5rem;">
-                <input type="text" id="login-e-resource" class="form-control" placeholder="Resource" value="energy" style="padding: 0.35rem 0.5rem; font-size: 0.8rem;" />
-                <input type="password" id="login-e-token" class="form-control" placeholder="Energy Access Token" style="padding: 0.35rem 0.5rem; font-size: 0.8rem;" />
-              </div>
-            </div>
-
-            <!-- Power Factor -->
-            <div>
-              <span style="font-size: 0.75rem; font-weight: 600; color: var(--primary); display: block; margin-bottom: 0.25rem;">Power Factor (PF)</span>
-              <div style="background: rgba(255, 255, 255, 0.03); padding: 0.5rem; border: 1px dashed var(--border-color); border-radius: var(--radius-sm); font-size: 0.75rem; color: var(--text-muted); text-align: center; line-height: 1.3;">
-                Calculated locally on-site using: <span style="font-family: monospace;">Active Power / (Voltage * Current)</span>
-              </div>
+              <input type="password" id="login-thinger-token" class="form-control" placeholder="Paste your bearer token here" value="-c0vw7#nzINhOI3G" required />
             </div>
           </div>
 
           <!-- Demo Mode Fallback Checkbox -->
           <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin: 1rem 0;">
-            <input type="checkbox" id="login-thinger-demo" style="width: 16px; height: 16px; cursor: pointer;" checked />
+            <input type="checkbox" id="login-thinger-demo" style="width: 16px; height: 16px; cursor: pointer;" />
             <label for="login-thinger-demo" style="margin-bottom: 0; cursor: pointer; font-size: 0.82rem; color: var(--text-secondary);">
               Enable Demo Mode fallback if device is offline
             </label>
@@ -870,229 +813,7 @@ SMTP_PASS=your_gmail_app_password
           </div>
         </section>
 
-        <!-- ZMPT101B & ACS712 Hardware Connection / Integration Manual -->
-        <section class="card hardware-guide-card" id="card-hardware-manual" style="grid-column: span 12; margin-top: 1rem;">
-          <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.25rem;">
-            <h2 style="font-size: 1.2rem; display: flex; align-items: center; gap: 0.6rem; color: var(--text-primary); margin: 0 0 0.25rem 0;">
-              <i data-lucide="book-open" style="color: var(--warning);"></i> Hardware Integration & ESP32 Live Sync Guide
-            </h2>
-            <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">
-              Connect your ZMPT101B AC voltage sensor and ACS712 current sensor to the ESP32 microcontroller, write the Thinger.io sketch, and verify complete endpoint connectivity.
-            </p>
-          </div>
 
-          <div style="display: grid; grid-template-columns: 1.1fr 1.2fr; gap: 1.5rem;" class="hardware-grid-responsive">
-            
-            <!-- Left Side: Wiring and Validation Checklist -->
-            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
-              
-              <!-- Connection Verification Dashboard -->
-              <div style="background: var(--bg-primary); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
-                <h3 style="font-size: 1rem; margin-top: 0; margin-bottom: 0.85rem; display: flex; align-items: center; gap: 0.4rem; color: var(--text-primary);">
-                  <i data-lucide="radio" style="width: 16px; height: 16px; color: var(--success);"></i> Live Connectivity Diagnostic
-                </h3>
-                
-                <div style="display: flex; flex-direction: column; gap: 0.65rem; font-size: 0.82rem;">
-                  <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed rgba(255, 255, 255, 0.05); padding-bottom: 0.4rem;">
-                    <span style="color: var(--text-muted);">Current Active Server Connection:</span>
-                    <strong id="diag-active-conn" class="mono" style="color: var(--success);">Checking...</strong>
-                  </div>
-                  <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed rgba(255, 255, 255, 0.05); padding-bottom: 0.4rem;">
-                    <span style="color: var(--text-muted);">Thinger.io Username:</span>
-                    <strong id="diag-username" class="mono" style="color: var(--text-secondary);">None (Demo Mode)</strong>
-                  </div>
-                  <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed rgba(255, 255, 255, 0.05); padding-bottom: 0.4rem;">
-                    <span style="color: var(--text-muted);">Device ID Target:</span>
-                    <strong id="diag-device-id" class="mono" style="color: var(--text-secondary);">None</strong>
-                  </div>
-                  <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed rgba(255, 255, 255, 0.05); padding-bottom: 0.4rem;">
-                    <span style="color: var(--text-muted);">Resource Hook:</span>
-                    <strong id="diag-resource" class="mono" style="color: var(--primary);">metrics</strong>
-                  </div>
-                  <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-                    <span style="color: var(--text-muted);">API Query Endpoint URL:</span>
-                    <code id="diag-api-url" class="mono" style="font-size: 0.72rem; color: var(--warning); background: #09090b; padding: 4px 6px; border-radius: 4px; word-break: break-all; white-space: pre-wrap; margin-top: 0.2rem; border: 1px solid rgba(255,255,255,0.02);">https://api.thinger.io/v2/users/...</code>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Pinout Connection Diagram -->
-              <div style="background: var(--bg-primary); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
-                <h3 style="font-size: 1rem; margin-top: 0; margin-bottom: 0.85rem; display: flex; align-items: center; gap: 0.4rem; color: var(--text-primary);">
-                  <i data-lucide="cpu" style="width: 16px; height: 16px; color: var(--primary);"></i> Sensor to ESP32 Pinout Configuration
-                </h3>
-
-                <table class="hardware-wiring-table" style="width: 100%; border-collapse: collapse; font-size: 0.8rem; text-align: left;">
-                  <thead>
-                    <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted);">
-                      <th style="padding: 0.4rem 0.2rem;">Sensor Module</th>
-                      <th style="padding: 0.4rem 0.2rem;">Sensor Pin</th>
-                      <th style="padding: 0.4rem 0.2rem;">ESP32 GPIO Pin</th>
-                      <th style="padding: 0.4rem 0.2rem;">Power Source</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.03);">
-                      <td style="padding: 0.5rem 0.2rem; font-weight: 600; color: var(--text-primary);">ZMPT101B (Voltage)</td>
-                      <td style="padding: 0.5rem 0.2rem;">OUT (Analog)</td>
-                      <td style="padding: 0.5rem 0.2rem;" class="mono" style="color: var(--primary);">GPIO 34 (ADC1_CH6)</td>
-                      <td style="padding: 0.5rem 0.2rem; color: var(--success);">3.3V DC / GND</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.03);">
-                      <td style="padding: 0.5rem 0.2rem; font-weight: 600; color: var(--text-primary);">ACS712 (Current)</td>
-                      <td style="padding: 0.5rem 0.2rem;">OUT (Analog)</td>
-                      <td style="padding: 0.5rem 0.2rem;" class="mono" style="color: var(--primary);">GPIO 35 (ADC1_CH7)</td>
-                      <td style="padding: 0.5rem 0.2rem; color: var(--warning);">5.0V DC / GND</td>
-                    </tr>
-                  </tbody>
-                </table>
-                <small style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-top: 0.6rem; line-height: 1.3;">
-                  ⚠️ <strong>Note:</strong> ZMPT101B has a multi-turn potentiometer on-board. Turn it to calibrate the signal amplitude so it does not clip the 3.3V input range of ESP32 analog pins. ACS712 requires stable 5V for accurate Hall-effect readings.
-                </small>
-              </div>
-
-              <!-- Connection Troubleshooting Checklist -->
-              <div style="background: var(--bg-primary); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
-                <h3 style="font-size: 1rem; margin-top: 0; margin-bottom: 0.85rem; display: flex; align-items: center; gap: 0.4rem; color: var(--text-primary);">
-                  <i data-lucide="check-square" style="width: 16px; height: 16px; color: var(--warning);"></i> Step-by-Step Validation Checklist
-                </h3>
-                <ol style="font-size: 0.8rem; color: var(--text-secondary); padding-left: 1.2rem; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; line-height: 1.45;">
-                  <li>
-                    <strong>Verify Hardware WiFi:</strong> Open Arduino Serial Monitor (115200 baud). Ensure you see <code class="mono" style="color: var(--warning);">[WiFi] Connected!</code> and <code class="mono" style="color: var(--success);">[Thinger] Connected!</code>.
-                  </li>
-                  <li>
-                    <strong>Check Thinger.io Portal:</strong> Log into console.thinger.io. Check that your Device is listed as <span style="color: var(--success); font-weight: 600;">ONLINE</span>.
-                  </li>
-                  <li>
-                    <strong>Confirm Resource Structure:</strong> In Thinger.io dashboard, check your device's API resources. You should see a resource named <code class="mono" style="color: var(--primary);">metrics</code> (or your custom name) that returns a JSON structure containing <code class="mono">voltage</code>, <code class="mono">current</code>, <code class="mono">power</code>, etc.
-                  </li>
-                  <li>
-                    <strong>Sync this Website:</strong> Enter your Thinger.io credentials in this applet's login page or Settings Drawer. The website will automatically pull real data every 2 seconds!
-                  </li>
-                </ol>
-              </div>
-
-            </div>
-
-            <!-- Right Side: ESP32 Arduino Code Block -->
-            <div style="display: flex; flex-direction: column; justify-content: space-between;">
-              <div style="background: #09090b; padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); height: 100%; display: flex; flex-direction: column;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-                  <span style="font-size: 0.82rem; font-weight: 600; color: #34d399; display: flex; align-items: center; gap: 0.4rem;">
-                    <i data-lucide="code" style="width: 14px; height: 14px;"></i> ESP32 Arduino Sketch Code (ZMPT101B + ACS712)
-                  </span>
-                  <button id="copy-esp-sketch-btn" class="btn btn-secondary" style="font-size: 0.7rem; padding: 0.2rem 0.5rem; display: flex; align-items: center; gap: 0.3rem;" onclick="navigator.clipboard.writeText(document.getElementById('esp-firmware-code-text').innerText); showToast('Code Copied', 'ESP32 Arduino sketch copied to clipboard!', 'success');">
-                    <i data-lucide="copy" style="width: 12px; height: 12px;"></i> Copy Code
-                  </button>
-                </div>
-
-                <div style="flex: 1; position: relative;">
-                  <pre id="esp-firmware-code-text" class="mono" style="color: #a7f3d0; background: #09090b; padding: 0.75rem; border-radius: var(--radius-sm); font-size: 0.72rem; overflow: auto; max-height: 480px; margin: 0; line-height: 1.4; border: 1px solid rgba(255,255,255,0.02); text-align: left;">#include &lt;WiFi.h&gt;
-#include &lt;ThingerESP32.h&gt;
-
-// --- IoT Credentials ---
-#define USERNAME "your_thinger_username"
-#define DEVICE_ID "esp32_energy"
-#define DEVICE_CREDENTIAL "your_device_access_token"
-
-// --- WiFi Credentials ---
-#define WIFI_SSID "your_wifi_ssid"
-#define WIFI_WPA2_PASSWORD "your_wifi_password"
-
-// Pin definitions
-const int ZMPT101B_PIN = 34; // ZMPT101B analog OUT -> GPIO 34 (ADC1_CH6)
-const int ACS712_PIN = 35;   // ACS712 analog OUT -> GPIO 35 (ADC1_CH7)
-
-// Calibration constants (Adjust to match physical calibration values)
-const float ZMPT_CALIBRATION = 385.0; // Voltage scale factor
-const float ACS_CALIBRATION = 0.185;   // Sensitivity in V/A (185mV/A for 5A model)
-
-ThingerESP32 thing(USERNAME, DEVICE_ID, DEVICE_CREDENTIAL);
-
-// Shared electrical metrics
-float rmsVoltage = 0.0;
-float rmsCurrent = 0.0;
-float activePower = 0.0;
-double totalEnergyKwh = 0.0; // Cumulative kWh
-unsigned long lastEnergyTime = 0;
-
-void setup() {
-  Serial.begin(115200);
-  
-  // Register WiFi connection
-  thing.add_wifi(WIFI_SSID, WIFI_WPA2_PASSWORD);
-  
-  // Define Thinger.io output resource structure
-  thing["metrics"] &gt;&gt; [](pson&amp; out){
-    out["voltage"] = rmsVoltage;
-    out["current"] = rmsCurrent;
-    out["power"] = activePower;
-    out["energy"] = totalEnergyKwh;
-    out["frequency"] = 50.0; // Grid standard frequency
-    out["powerFactor"] = (rmsVoltage &gt; 0 &amp;&amp; rmsCurrent &gt; 0) ? (activePower / (rmsVoltage * rmsCurrent)) : 1.0;
-  };
-  
-  lastEnergyTime = millis();
-}
-
-void loop() {
-  thing.handle();
-  
-  // Perform measurement calculations every 2 seconds
-  static unsigned long lastMeasureTime = 0;
-  if (millis() - lastMeasureTime &gt;= 2000) {
-    calculateElectricalMetrics();
-    lastMeasureTime = millis();
-  }
-}
-
-void calculateElectricalMetrics() {
-  long voltageSum = 0;
-  int numSamples = 1000;
-  
-  // 1. ZMPT101B AC Voltage Sampling (RMS Calculation)
-  float sumSq = 0;
-  for (int i = 0; i &lt; numSamples; i++) {
-    // Offset analog values centered around 1.65V (approx 2048 counts)
-    float rawValue = analogRead(ZMPT101B_PIN) - 2048.0;
-    sumSq += (rawValue * rawValue);
-    delayMicroseconds(50); // Sample at 20kHz rate
-  }
-  float rmsADC = sqrt(sumSq / numSamples);
-  rmsVoltage = rmsADC * (3.3 / 4095.0) * ZMPT_CALIBRATION;
-  if (rmsVoltage &lt; 20.0) rmsVoltage = 0.0; // Filter out noise
-  
-  // 2. ACS712 AC Current Sampling (RMS Calculation)
-  float sumCurrentSq = 0;
-  for (int i = 0; i &lt; numSamples; i++) {
-    float adcVoltage = (analogRead(ACS712_PIN) / 4095.0) * 3.3;
-    float currentAmps = (adcVoltage - 1.65) / ACS_CALIBRATION; // Offset 1.65V center
-    sumCurrentSq += (currentAmps * currentAmps);
-    delayMicroseconds(50);
-  }
-  rmsCurrent = sqrt(sumCurrentSq / numSamples);
-  if (rmsCurrent &lt; 0.08) rmsCurrent = 0.0; // Filter out noise
-  
-  // 3. Active Power & Cumulative Energy calculation
-  float powerFactorVal = 0.90; // Standard domestic power factor assumption
-  activePower = rmsVoltage * rmsCurrent * powerFactorVal;
-  
-  // Accumulate energy (kWh = kW * Hours)
-  unsigned long now = millis();
-  double timeDeltaHours = (now - lastEnergyTime) / 3600000.0;
-  totalEnergyKwh += (activePower / 1000.0) * timeDeltaHours;
-  lastEnergyTime = now;
-  
-  // Output status logs to serial monitor
-  Serial.printf("V: %.1f V | I: %.2f A | P: %.1f W | Energy: %.6f kWh\n", 
-                rmsVoltage, rmsCurrent, activePower, totalEnergyKwh);
-}</pre>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </section>
 
 
       </main>
