@@ -87,7 +87,13 @@ export const EmailDispatcher: React.FC<EmailDispatcherProps> = ({
         }),
       });
 
-      const result = await response.json();
+      const responseText = await response.text();
+      let result: any;
+      try {
+        result = JSON.parse(responseText);
+      } catch (jsonErr) {
+        throw new Error(responseText.slice(0, 200) || `Server returned HTML or raw text error status: ${response.status}`);
+      }
 
       if (!response.ok) {
         throw new Error(result.error || 'Failed to send email');

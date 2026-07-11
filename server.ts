@@ -1,6 +1,5 @@
 import express from "express";
 import path from "path";
-import { createServer as createViteServer } from "vite";
 import nodemailer from "nodemailer";
 
 const app = express();
@@ -625,6 +624,8 @@ app.post("/api/send-email", async (req, res) => {
 // Vite server setup
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
+    const vitePkg = "vite";
+    const { createServer: createViteServer } = await import(vitePkg);
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
