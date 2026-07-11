@@ -622,10 +622,10 @@ app.post("/api/send-email", async (req, res) => {
 });
 
 // Vite server setup
+// Vite server setup
 async function startServer() {
-  if (process.env.NODE_ENV !== "production") {
-    const vitePkg = "vite";
-    const { createServer: createViteServer } = await import(vitePkg);
+  if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
+    const { createServer: createViteServer } = await eval('import("vite")');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
