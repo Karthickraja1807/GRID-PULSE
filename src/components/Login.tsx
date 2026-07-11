@@ -267,9 +267,8 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, savedConfig }) => 
         )}
         
         <div className="login-footer" style={{ textAlign: 'center', marginTop: '1.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
-          <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '0 0 0.25rem 0' }}>GridPulse IoT Smart Energy Management Platform &copy; 2026</p>
-          <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>Designed for Final Year Presentation — Dept. of ECE</p>
-        </div>
+          <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>GridPulse IoT Smart Energy Management Platform &copy; 2026</p>
+        </div
       </div>
     </div>
   );
