@@ -86,7 +86,6 @@ export const EmailDispatcher: React.FC<EmailDispatcherProps> = ({
           reportData: reportData,
         }),
       });
-
       const responseText = await response.text();
       let result: any;
       try {
