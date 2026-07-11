@@ -622,9 +622,9 @@ app.post("/api/send-email", async (req, res) => {
 });
 
 // Vite server setup
-// Vite server setup
 async function startServer() {
   if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
+    // We use eval('import(...)') to stop Vercel's bundler from parsing/including 'vite'
     const { createServer: createViteServer } = await eval('import("vite")');
     const vite = await createViteServer({
       server: { middlewareMode: true },
